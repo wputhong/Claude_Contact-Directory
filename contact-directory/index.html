@@ -1,0 +1,1656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="format-detection" content="telephone=no">
+<meta name="color-scheme" content="light">
+<title>Counterpart Directory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#0F2A4A;
+    --navy-soft:#294770;
+    --paper:#FAFAF8;
+    --paper-deep:#F0EEE7;
+    --card:#FFFFFF;
+    --ink:#22242A;
+    --ink-soft:#767A82;
+    --line:#E7E5DD;
+    --gold:#B6892F;
+    --gold-soft:#F4E9CE;
+    --shadow: 0 1px 2px rgba(20,20,20,0.04);
+    --radius: 10px;
+  }
+  *{box-sizing:border-box;}
+  html{ -webkit-text-size-adjust:100%; text-size-adjust:100%; color-scheme:light; }
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'IBM Plex Sans', sans-serif;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+    min-height:100dvh;
+    -webkit-tap-highlight-color:transparent;
+    overscroll-behavior-y:none;
+  }
+  button, .card, .group-tab, .mode-btn, .swatch, .icon-btn, .alert-btn{
+    touch-action:manipulation;
+  }
+  .app{position:relative; z-index:1; display:flex; min-height:100vh;}
+
+  /* ---------- Sidebar ---------- */
+  .sidebar{
+    width:220px; flex:none;
+    background:var(--card);
+    border-right:1px solid var(--line);
+    color:var(--ink);
+    padding:26px 0 20px;
+    padding-left: env(safe-area-inset-left);
+    display:flex; flex-direction:column;
+    position:sticky; top:0;
+    height:100vh; height:100dvh;
+  }
+  .brand{
+    padding:0 20px 18px;
+    margin-bottom:14px;
+  }
+  .brand .kicker{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10px; letter-spacing:.12em; text-transform:uppercase;
+    color:var(--ink-soft);
+  }
+  .brand h1{
+    font-family:'Newsreader', serif;
+    font-weight:600; font-size:19px; line-height:1.25;
+    margin:6px 0 0; color:var(--ink);
+  }
+  .group-list{ flex:1; overflow-y:auto; padding:2px 12px; }
+  .group-tab{
+    display:flex; align-items:center; gap:9px;
+    padding:8px 10px; margin-bottom:1px;
+    border-radius:7px; cursor:pointer;
+    color:var(--ink-soft); font-size:13.5px;
+    transition:background .12s ease;
+  }
+  .group-tab:hover{ background:var(--paper); }
+  .group-tab.active{ background:var(--paper); color:var(--ink); font-weight:500; }
+  .group-dot{ width:7px; height:7px; border-radius:50%; flex:none; }
+  .group-tab .g-name{ flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .group-tab .g-count{
+    font-family:'IBM Plex Mono', monospace; font-size:11px;
+    color:var(--ink-soft); min-width:16px; text-align:right;
+  }
+  .add-group-btn{
+    margin:8px 12px 0; padding:8px 10px;
+    border-radius:7px; border:1px dashed var(--line);
+    color:var(--ink-soft); background:transparent; cursor:pointer;
+    font-family:'IBM Plex Sans', sans-serif; font-size:12.5px; text-align:left;
+  }
+  .add-group-btn:hover{ background:var(--paper); color:var(--ink); }
+  .mode-switch{
+    display:flex; gap:2px; margin:0 12px 16px; padding:2px;
+    background:var(--paper); border:1px solid var(--line); border-radius:8px;
+  }
+  .mode-btn{
+    flex:1; padding:6px 4px; border-radius:6px; border:none; cursor:pointer;
+    background:transparent; color:var(--ink-soft); font-family:'IBM Plex Sans', sans-serif;
+    font-size:12px; font-weight:500;
+  }
+  .mode-btn.active{ background:var(--card); color:var(--ink); box-shadow:var(--shadow); }
+  .section-heading{
+    display:flex; align-items:baseline; gap:8px; margin:26px 0 12px;
+  }
+  .section-heading:first-child{ margin-top:0; }
+  .section-heading h4{
+    font-family:'Newsreader', serif; font-weight:600; font-size:16px; margin:0;
+    color:var(--ink);
+  }
+  .section-heading .count{
+    font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--ink-soft);
+  }
+  .section-heading .rule{ flex:1; height:1px; background:var(--line); }
+  .verified-tag{
+    font-family:'IBM Plex Mono', monospace; font-size:10.5px; color:var(--ink-soft);
+  }
+
+  /* ---------- Avatars ---------- */
+  .avatar{
+    width:38px; height:38px; border-radius:50%; flex:none;
+    background:var(--paper-deep); color:var(--ink-soft); object-fit:cover;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'IBM Plex Sans', sans-serif; font-weight:600; font-size:13px;
+  }
+  .card .row-top{ align-items:flex-start; }
+  .photo-upload{
+    display:flex; align-items:center; gap:14px; margin-bottom:16px;
+  }
+  .photo-upload .avatar{ width:52px; height:52px; font-size:17px; cursor:pointer; }
+  .photo-upload .photo-actions{ display:flex; gap:8px; }
+  .photo-upload .btn-tiny{
+    font-family:'IBM Plex Sans', sans-serif; font-size:12px; padding:6px 11px;
+    border-radius:6px; border:1px solid var(--line); background:var(--card);
+    color:var(--ink); cursor:pointer;
+  }
+  .photo-upload .btn-tiny:hover{ background:var(--paper); }
+  .photo-upload .btn-tiny.remove{ color:#a6423d; }
+
+  /* ---------- Refresh / alert banner ---------- */
+  .refresh-btn{ display:flex; align-items:center; gap:6px; }
+  .refresh-btn:disabled{ opacity:0.6; cursor:default; }
+  .spin{ display:inline-block; animation:spin 0.9s linear infinite; }
+  @keyframes spin{ from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
+
+  .alert-banner{
+    background:var(--card); border:1px solid var(--line); border-left:3px solid var(--gold);
+    border-radius:8px; padding:14px 16px; margin-bottom:18px;
+  }
+  .alert-banner .alert-head{
+    display:flex; justify-content:space-between; align-items:center; margin-bottom:2px;
+  }
+  .alert-banner .alert-title{
+    font-weight:600; font-size:13.5px; color:var(--ink);
+  }
+  .alert-banner .alert-dismiss-all{
+    background:none; border:none; font-size:12px; color:var(--ink-soft); cursor:pointer;
+  }
+  .alert-row{
+    display:flex; justify-content:space-between; align-items:center; gap:12px;
+    padding:10px 0; border-top:1px solid var(--line);
+  }
+  .alert-row .alert-info{ font-size:12.5px; color:var(--ink); }
+  .alert-row .alert-info strong{ font-weight:600; }
+  .alert-row .alert-change{ color:var(--ink-soft); margin-top:2px; }
+  .alert-row .alert-actions{ display:flex; gap:6px; flex:none; }
+  .alert-btn{
+    font-family:'IBM Plex Sans', sans-serif; font-size:11.5px; padding:5px 9px;
+    border-radius:5px; border:1px solid var(--line); background:#fff; cursor:pointer;
+  }
+  .alert-btn.apply{ background:var(--navy); color:#fff; border-color:var(--navy); }
+  .alert-toast{
+    background:var(--card); border:1px solid var(--line); border-radius:8px;
+    padding:10px 14px; margin-bottom:18px; font-size:12.5px; color:var(--ink-soft);
+    display:flex; justify-content:space-between; align-items:center;
+  }
+  .sidebar-foot{
+    padding:14px 20px 0; margin-top:14px;
+    border-top:1px solid var(--line);
+    font-family:'IBM Plex Mono', monospace; font-size:10.5px; color:var(--ink-soft);
+  }
+  .sidebar-foot #syncStatus{ margin-top:4px; min-height:12px; }
+  .sidebar-foot .settings-btn{
+    margin-top:10px; width:100%; padding:7px 10px;
+    border-radius:7px; border:1px dashed var(--line);
+    color:var(--ink-soft); background:transparent; cursor:pointer;
+    font-family:'IBM Plex Sans', sans-serif; font-size:12px; text-align:left;
+  }
+  .sidebar-foot .settings-btn:hover{ background:var(--paper); color:var(--ink); }
+
+  /* ---------- Main ---------- */
+  .main{
+    flex:1; min-width:0; padding:36px 44px 60px;
+    padding-right: calc(44px + env(safe-area-inset-right));
+    padding-bottom: calc(60px + env(safe-area-inset-bottom));
+  }
+  .topbar{
+    display:flex; align-items:flex-end; justify-content:space-between; gap:24px;
+    margin-bottom:26px; flex-wrap:wrap;
+  }
+  .topbar h2{
+    font-family:'Newsreader', serif; font-weight:600; font-size:25px; margin:0 0 4px;
+    display:flex; align-items:center; gap:10px; color:var(--ink);
+  }
+  .topbar .sub{ color:var(--ink-soft); font-size:13px; }
+  .actions{ display:flex; gap:8px; align-items:center; }
+  .search-wrap{ position:relative; }
+  .search-wrap input{
+    font-family:'IBM Plex Sans', sans-serif; font-size:13.5px;
+    padding:8px 12px 8px 32px; border:1px solid var(--line); border-radius:7px;
+    background:var(--card); width:220px; color:var(--ink);
+    -webkit-appearance:none; appearance:none;
+  }
+  .search-wrap input:focus{ outline:none; border-color:var(--navy-soft); }
+  .search-wrap .icon{
+    position:absolute; left:10px; top:50%; transform:translateY(-50%);
+    font-size:13px; color:var(--ink-soft); pointer-events:none;
+  }
+  .btn{
+    font-family:'IBM Plex Sans', sans-serif; font-weight:500; font-size:13px;
+    padding:8px 15px; border-radius:7px; border:1px solid transparent;
+    cursor:pointer; transition:background .12s ease, border-color .12s ease;
+  }
+  .btn-primary{ background:var(--navy); color:#fff; }
+  .btn-primary:hover{ background:var(--navy-soft); }
+  .btn-ghost{ background:var(--card); color:var(--ink); border-color:var(--line); }
+  .btn-ghost:hover{ border-color:var(--ink-soft); }
+
+  .cards-grid{
+    display:grid; grid-template-columns:repeat(auto-fill, minmax(270px,1fr));
+    gap:14px;
+  }
+  .card{
+    background:var(--card); border-radius:var(--radius);
+    border:1px solid var(--line);
+    padding:16px 16px 14px;
+    position:relative;
+  }
+  .card .row-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
+  .card h3{
+    font-family:'Newsreader', serif; font-weight:600; font-size:16.5px; margin:0 0 2px;
+    line-height:1.25; color:var(--ink);
+  }
+  .card .position{ font-size:12.5px; color:var(--ink-soft); margin:0 0 1px;}
+  .card .org{ font-size:12.5px; color:var(--ink); font-weight:500; margin:0 0 10px; }
+  .card .field{
+    font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--ink-soft);
+    display:flex; gap:7px; align-items:baseline; margin-bottom:3px; word-break:break-all;
+  }
+  .card .field .lbl{ color:var(--ink-soft); opacity:0.6; min-width:16px; }
+  .card .met{
+    margin-top:11px; display:inline-flex; align-items:center; gap:5px;
+    background:var(--paper); color:var(--ink-soft);
+    font-size:11px; padding:3px 9px; border-radius:20px;
+    font-family:'IBM Plex Sans', sans-serif;
+  }
+  .card .notes{ margin-top:9px; font-size:12px; color:var(--ink-soft); line-height:1.4; }
+  .card-actions{
+    position:absolute; top:10px; right:10px; display:flex; gap:4px;
+    opacity:0; transition:opacity .12s ease;
+  }
+  .card:hover .card-actions{ opacity:1; }
+  .icon-btn{
+    width:24px; height:24px; border-radius:6px; border:1px solid var(--line);
+    background:var(--card); cursor:pointer; font-size:12px; color:var(--ink-soft);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .icon-btn:hover{ background:var(--paper); }
+  .group-chip{
+    display:inline-flex; align-items:center; gap:5px;
+    font-size:11px; padding:2px 9px; border-radius:20px;
+    color:var(--ink-soft); border:1px solid var(--line);
+    flex:none; margin-top:2px; background:var(--card);
+  }
+  .chip-dot{ width:6px; height:6px; border-radius:50%; flex:none; }
+
+  .empty{
+    text-align:center; padding:70px 20px; color:var(--ink-soft);
+  }
+  .empty .glyph{ font-size:26px; margin-bottom:10px; opacity:0.5; }
+  .empty h3{ font-family:'Newsreader', serif; font-size:18px; color:var(--ink); margin:0 0 6px; font-weight:600; }
+  .empty p{ font-size:13.5px; margin:0 0 16px; }
+
+  /* ---------- Modal ---------- */
+  .overlay{
+    position:fixed; inset:0; background:rgba(20,20,20,0.32);
+    display:none; align-items:center; justify-content:center; z-index:50; padding:20px;
+  }
+  .overlay.show{ display:flex; }
+  .modal{
+    background:var(--card); border-radius:12px; width:100%; max-width:440px;
+    box-shadow:0 12px 32px rgba(0,0,0,0.14);
+    max-height:88vh; max-height:88dvh;
+    overflow-y:auto; -webkit-overflow-scrolling:touch;
+  }
+  .modal-head{
+    padding:18px 22px; border-bottom:1px solid var(--line);
+    display:flex; justify-content:space-between; align-items:center;
+  }
+  .modal-head h3{ font-family:'Newsreader', serif; font-size:18px; margin:0; font-weight:600; color:var(--ink); }
+  .modal-close{ background:none; border:none; font-size:16px; cursor:pointer; color:var(--ink-soft); }
+  .modal-body{ padding:20px 22px; }
+  .scan-btn{
+    width:100%; display:flex; align-items:center; justify-content:center; gap:8px;
+    padding:10px 12px; margin-bottom:16px; border-radius:8px;
+    border:1px dashed var(--line); background:var(--paper);
+    color:var(--ink); font-family:'IBM Plex Sans', sans-serif; font-size:13px; font-weight:500;
+    cursor:pointer;
+  }
+  .scan-btn:hover{ border-color:var(--ink-soft); }
+  .scan-btn:disabled{ opacity:0.6; cursor:default; }
+  .scan-status{
+    text-align:center; font-size:12px; color:var(--ink-soft); margin:-10px 0 16px;
+  }
+  .scan-status.error{ color:#a6423d; }
+  .field-row{ margin-bottom:14px; }
+  .field-row label{
+    display:block; font-size:12px; font-weight:500; color:var(--ink-soft);
+    margin-bottom:5px;
+  }
+  .field-row input, .field-row select, .field-row textarea{
+    width:100%; font-family:'IBM Plex Sans', sans-serif; font-size:13.5px;
+    padding:8px 11px; border:1px solid var(--line); border-radius:7px;
+    background:var(--paper); color:var(--ink);
+    -webkit-appearance:none; appearance:none;
+  }
+  .field-row select{
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath fill='%23767A82' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+    background-repeat:no-repeat; background-position:right 11px center; padding-right:30px;
+  }
+  .field-row textarea{ resize:vertical; min-height:56px; font-family:'IBM Plex Sans', sans-serif; }
+  .field-row input:focus, .field-row select:focus, .field-row textarea:focus{
+    outline:none; border-color:var(--navy-soft); background:#fff;
+  }
+  .two-col{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .modal-foot{
+    padding:16px 22px 20px; display:flex; justify-content:space-between; gap:10px;
+    border-top:1px solid var(--line);
+  }
+  .swatches{ display:flex; gap:8px; flex-wrap:wrap; margin-top:4px; }
+  .swatch{
+    width:24px; height:24px; border-radius:50%; cursor:pointer; border:2px solid transparent;
+  }
+  .swatch.selected{ border-color:var(--ink); }
+  .delete-link{ color:#a6423d; background:none; border:none; font-size:12.5px; cursor:pointer; }
+
+  @media (max-width: 760px){
+    .app{ flex-direction:column; }
+    .sidebar{ width:100%; height:auto; position:relative; padding:16px 0 12px; padding-left:0; border-right:none; border-bottom:1px solid var(--line); }
+    .brand{ padding:0 16px 12px; }
+    .group-list{ display:flex; overflow-x:auto; -webkit-overflow-scrolling:touch; padding:6px 10px; gap:6px; }
+    .group-tab{ flex:none; margin-bottom:0; }
+    .add-group-btn{ display:none; }
+    .main{ padding:20px 16px 50px; padding-bottom: calc(50px + env(safe-area-inset-bottom)); }
+    .two-col{ grid-template-columns:1fr; }
+    /* iOS Safari zooms the page in if a focused field's font-size is under 16px — keep all inputs at 16px here */
+    .field-row input, .field-row select, .field-row textarea,
+    .search-wrap input, .g_name-input{
+      font-size:16px;
+    }
+    .search-wrap input{ width:100%; }
+    .actions{ width:100%; flex-wrap:wrap; gap:8px; }
+    .search-wrap{ flex:1 1 100%; min-width:0; }
+    .refresh-btn{ flex:1; justify-content:center; }
+    #addContactBtn{ flex:1; }
+    .topbar .actions{ flex-wrap:wrap; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="kicker">Engagement Record</div>
+      <h1>Counterpart<br>Directory</h1>
+    </div>
+    <div class="mode-switch">
+      <button class="mode-btn active" id="modeDirectoryBtn">Directory</button>
+      <button class="mode-btn" id="modeLibraryBtn">Library</button>
+    </div>
+    <div class="group-list" id="groupList"></div>
+    <button class="add-group-btn" id="addGroupBtn">+ Add group</button>
+    <div class="sidebar-foot">
+      <div id="totalCount">0 contacts</div>
+      <div id="syncStatus"></div>
+      <button class="settings-btn" id="settingsBtn">⚙ Storage &amp; AI settings</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <h2 id="viewTitle">All counterparts</h2>
+        <div class="sub" id="viewSub">Every group, most recent first</div>
+      </div>
+      <div class="actions">
+        <div class="search-wrap">
+          <span class="icon">⌕</span>
+          <input type="text" id="searchInput" placeholder="Search name, org, position…">
+        </div>
+        <button class="btn btn-ghost refresh-btn" id="refreshAllBtn">⟲ Refresh all</button>
+        <button class="btn btn-primary" id="addContactBtn">+ Add contact</button>
+      </div>
+    </div>
+
+    <div id="alertBanner" style="display:none;"></div>
+    <div class="cards-grid" id="cardsGrid"></div>
+    <div class="empty" id="emptyState" style="display:none;">
+      <div class="glyph">◇</div>
+      <h3 id="emptyTitle">No contacts yet</h3>
+      <p id="emptyText">Add the people you meet across ministries, banks, and campuses.</p>
+      <button class="btn btn-primary" id="emptyAddBtn">+ Add contact</button>
+    </div>
+  </main>
+</div>
+
+<!-- Contact Modal -->
+<div class="overlay" id="contactOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="contactModalTitle">Add contact</h3>
+      <button class="modal-close" id="contactCloseBtn">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="photo-upload">
+        <div class="avatar" id="f_photo_preview">?</div>
+        <div class="photo-actions">
+          <button type="button" class="btn-tiny" id="photoUploadBtn">Add photo</button>
+          <button type="button" class="btn-tiny remove" id="photoRemoveBtn" style="display:none;">Remove</button>
+        </div>
+        <input type="file" id="photoFileInput" accept="image/*" style="display:none;">
+      </div>
+      <button type="button" class="scan-btn" id="scanCardBtn">📷 Scan a name card (front &amp; back OK) to fill this in</button>
+      <input type="file" id="cardFileInput" accept="image/*" multiple style="display:none;">
+      <div class="scan-status" id="scanStatus" style="display:none;"></div>
+      <div class="field-row">
+        <label>Name *</label>
+        <input type="text" id="f_name" placeholder="e.g. Dr. Somchai Prasert">
+      </div>
+      <div class="two-col">
+        <div class="field-row">
+          <label id="f_position_label">Recent position</label>
+          <input type="text" id="f_position" placeholder="e.g. Director, Fiscal Policy Office">
+        </div>
+        <div class="field-row">
+          <label id="f_org_label">Organization *</label>
+          <input type="text" id="f_org" placeholder="e.g. Ministry of Finance">
+        </div>
+      </div>
+      <div class="two-col" id="contactOnlyFields1">
+        <div class="field-row">
+          <label>Email</label>
+          <input type="email" id="f_email" placeholder="name@agency.go.th">
+        </div>
+        <div class="field-row">
+          <label>Phone</label>
+          <input type="text" id="f_phone" placeholder="+66 ...">
+        </div>
+      </div>
+      <div class="two-col">
+        <div class="field-row">
+          <label id="f_group_label">Group</label>
+          <select id="f_group"></select>
+        </div>
+        <div class="field-row" id="contactOnlyFields2">
+          <label>Where we met</label>
+          <input type="text" id="f_met" placeholder="e.g. BOT DSA Workshop, 2026">
+        </div>
+      </div>
+      <div class="field-row">
+        <label>Notes</label>
+        <textarea id="f_notes" placeholder="Anything worth remembering before the next meeting"></textarea>
+      </div>
+      <div class="field-row" id="updateHistoryWrap" style="display:none;">
+        <label>Update history</label>
+        <div id="updateHistoryList"></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="delete-link" id="deleteContactBtn" style="visibility:hidden;">Delete contact</button>
+      <div style="display:flex; gap:8px;">
+        <button class="btn btn-ghost" id="cancelContactBtn">Cancel</button>
+        <button class="btn btn-primary" id="saveContactBtn">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Group Modal -->
+<div class="overlay" id="groupOverlay">
+  <div class="modal" style="max-width:380px;">
+    <div class="modal-head">
+      <h3 id="groupModalTitle">Add group</h3>
+      <button class="modal-close" id="groupCloseBtn">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="field-row">
+        <label>Group name *</label>
+        <input type="text" id="g_name" placeholder="e.g. Development Partners">
+      </div>
+      <div class="field-row">
+        <label>Color</label>
+        <div class="swatches" id="g_swatches"></div>
+      </div>
+    </div>
+    <div class="modal-foot" style="justify-content:flex-end;">
+      <button class="btn btn-ghost" id="cancelGroupBtn">Cancel</button>
+      <button class="btn btn-primary" id="saveGroupBtn">Save group</button>
+    </div>
+  </div>
+</div>
+
+<!-- Update Check Modal -->
+<div class="overlay" id="updateOverlay">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-head">
+      <h3>Check for updates</h3>
+      <button class="modal-close" id="updateCloseBtn">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="updateCurrent" style="margin-bottom:16px; font-size:13px; color:var(--ink-soft);"></div>
+      <div id="updateLoading" style="font-family:'IBM Plex Mono', monospace; font-size:12.5px; color:var(--ink-soft);">Searching the web…</div>
+      <div id="updateResult" style="display:none;">
+        <div class="field-row">
+          <label>Found position</label>
+          <div id="updateFoundPosition" style="font-size:13.5px;"></div>
+        </div>
+        <div class="field-row">
+          <label>Found organization</label>
+          <div id="updateFoundOrg" style="font-size:13.5px;"></div>
+        </div>
+        <div id="updateNote" style="font-size:12px; color:var(--ink-soft);"></div>
+      </div>
+      <div id="updateNotFound" style="display:none; font-size:13px; color:var(--ink-soft);">No reliable recent update found.</div>
+    </div>
+    <div class="modal-foot" id="updateFoot" style="display:none;">
+      <button class="btn btn-ghost" id="updateLogOnlyBtn">Log only</button>
+      <button class="btn btn-primary" id="updateApplyBtn">Apply to record</button>
+    </div>
+  </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="overlay" id="settingsOverlay">
+  <div class="modal" style="max-width:440px;">
+    <div class="modal-head">
+      <h3>Storage &amp; AI settings</h3>
+      <button class="modal-close" id="settingsCloseBtn">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:12.5px; color:var(--ink-soft); margin-top:0; line-height:1.5;">
+        Your data is stored in a private GitHub Gist under your own account, so it follows you across devices.
+        Create a fine-grained token scoped to <strong>Gists: Read and write</strong> only at
+        <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com/settings/personal-access-tokens/new</a>
+        (a classic token with the <strong>gist</strong> scope also works). The token is kept only in this browser's
+        local storage — it is never written into any file or repo.
+      </p>
+      <div class="field-row">
+        <label>GitHub personal access token *</label>
+        <input type="password" id="s_token" placeholder="github_pat_... or ghp_...">
+      </div>
+      <div class="field-row">
+        <label>Gist ID (leave blank the first time — one will be created)</label>
+        <input type="text" id="s_gist_id" placeholder="e.g. 3b1f2c9a... (from an existing gist to sync a second device)">
+      </div>
+      <div class="field-row">
+        <label>AI proxy URL (optional — leave blank to use this site's own address)</label>
+        <input type="text" id="s_proxy_url" placeholder="only needed if the AI proxy is hosted elsewhere">
+      </div>
+      <div id="settingsStatus" style="font-size:12px; color:var(--ink-soft); min-height:16px;"></div>
+    </div>
+    <div class="modal-foot" style="justify-content:flex-end;">
+      <button class="btn btn-ghost" id="settingsCancelBtn">Cancel</button>
+      <button class="btn btn-primary" id="settingsSaveBtn">Save &amp; connect</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const LOCAL_CACHE_KEY = 'contact-directory-v1';
+  const GIST_FILENAME = 'contact-directory.json';
+  const SETTINGS_PREFIX = 'cd_';
+  const PALETTE = ['#002060','#F79646','#31859C','#C0504D','#FFC000','#7030A0','#00B050','#0066FF','#9999FF','#632523','#CC9900','#FF3399','#93B2D6','#93CDDD'];
+
+  const DEFAULT_GROUPS = [
+    {id:'gov', name:'Government', color:'#002060', builtin:true},
+    {id:'private', name:'Private sector', color:'#F79646', builtin:true},
+    {id:'univ', name:'Universities', color:'#31859C', builtin:true},
+    {id:'fiscal', name:'Fiscal experts', color:'#C0504D', builtin:true},
+    {id:'bot', name:'BOT', color:'#C99A2E', builtin:true},
+    {id:'others', name:'Others', color:'#7030A0', builtin:true},
+  ];
+
+  const DEFAULT_LIBRARY_SECTIONS = [
+    {id:'exec', name:'PM & Cabinet', color:'#002060', builtin:true},
+    {id:'mof', name:'Ministry of Finance', color:'#C0504D', builtin:true},
+    {id:'botlib', name:'Bank of Thailand', color:'#C99A2E', builtin:true},
+    {id:'moi', name:'Ministry of Interior', color:'#7030A0', builtin:true},
+    {id:'other_agencies', name:'Other Agencies', color:'#00B050', builtin:true},
+  ];
+
+  const ASOF = 'Jul 2026';
+  const DEFAULT_LIBRARY_OFFICIALS = [
+    {id:'lib_pm', name:'Anutin Charnvirakul', position:'Prime Minister; also Minister of Interior', org:'Royal Thai Government', group:'exec', notes:'Reelected as PM 19 Mar 2026 (Anutin II government); Bhumjaithai Party leader.'},
+    {id:'lib_dpm1', name:'Ekniti Nitithanprapas', position:'Deputy Prime Minister & Minister of Finance', org:'Ministry of Finance', group:'exec', notes:''},
+    {id:'lib_dpm2', name:'Suphajee Suthumpun', position:'Deputy Prime Minister & Minister of Commerce', org:'Ministry of Commerce', group:'exec', notes:''},
+    {id:'lib_dpm3', name:'Sihasak Phuangketkeow', position:'Deputy Prime Minister & Minister of Foreign Affairs', org:'Ministry of Foreign Affairs', group:'exec', notes:''},
+    {id:'lib_dpm4', name:'Phiphat Ratchakitprakarn', position:'Deputy Prime Minister & Minister of Transport', org:'Ministry of Transport', group:'exec', notes:''},
+    {id:'lib_dpm5', name:'Yodchanan (Yossanan) Wongsawat', position:'Deputy Prime Minister & Minister of Higher Education, Science, Research and Innovation', org:'Ministry of Higher Education, Science, Research and Innovation', group:'exec', notes:''},
+    {id:'lib_dpm6', name:'Pakorn Nilprapunt', position:'Deputy Prime Minister (Legal Affairs)', org:"Office of the Council of State", group:'exec', notes:'Former Secretary-General of the Council of State.'},
+    {id:'lib_fpo', name:'Vinit Visessuvanapoom', position:'Director-General, Fiscal Policy Office (FPO)', org:'Ministry of Finance', group:'mof', notes:''},
+    {id:'lib_rd', name:'Somsak Anantawat', position:'Director-General, Revenue Department', org:'Ministry of Finance', group:'mof', notes:'Appointed May 2026, succeeding Kulaya Tantitemit.'},
+    {id:'lib_bb', name:'Anan Kaewkamnerd', position:'Director-General, Bureau of the Budget (BB)', org:'Office of the Prime Minister', group:'mof', notes:'Budget Bureau sits under the PM’s Office, works closely with MOF on the fiscal framework.'},
+    {id:'lib_cgd', name:'Patricia Mongkhonvanit', position:'Director-General, Comptroller General’s Department (CGD)', org:'Ministry of Finance', group:'mof', notes:''},
+    {id:'lib_pdmo', name:'Jindarat Viriyataveekul', position:'Director-General, Public Debt Management Office (PDMO)', org:'Ministry of Finance', group:'mof', notes:''},
+    {id:'lib_bot', name:'Vitai Ratanakorn', position:'Governor, Bank of Thailand', org:'Bank of Thailand', group:'botlib', notes:'In office since 1 Oct 2025, succeeding Sethaput Suthiwartnarueput.'},
+    {id:'lib_moi_ps', name:'Arsayes Sampanrat', position:'Permanent Secretary', org:'Ministry of Interior', group:'moi', notes:'Formerly Director-General, Department of Provincial Administration.'},
+    {id:'lib_mof_ps', name:'Lavaron Sangsanit', position:'Permanent Secretary', org:'Ministry of Finance', group:'mof', notes:''},
+    {id:'lib_rd_dep1', name:'Phanuwat Leuangwilai', position:'Deputy Director-General, Revenue Department', org:'Ministry of Finance', group:'mof', notes:'One of four current Revenue Department deputy directors-general.'},
+    {id:'lib_rd_dep2', name:'Surayut Kobkitpanitpol', position:'Deputy Director-General, Revenue Department', org:'Ministry of Finance', group:'mof', notes:''},
+    {id:'lib_rd_dep3', name:'Krida Krittiyachotipakorn', position:'Deputy Director-General, Revenue Department', org:'Ministry of Finance', group:'mof', notes:''},
+    {id:'lib_rd_dep4', name:'Khwanrak Suwannarampa', position:'Deputy Director-General, Revenue Department', org:'Ministry of Finance', group:'mof', notes:''},
+    {id:'lib_fpo_dep', name:'Natthawut Thammasiri', position:'Deputy Director, Fiscal Policy Office (FPO)', org:'Ministry of Finance', group:'mof', notes:''},
+    {id:'lib_rd_advisor1', name:'Jittra Neesanan', position:'Advisor on Tax Base Development (Senior Expert-level Policy and Plan Analyst)', org:'Revenue Department, Ministry of Finance', group:'mof', notes:'Confirmed via rd.go.th senior executives page.'},
+    {id:'lib_rd_dir1', name:'Saowakhon Meesaeng', position:'Director, Tax Planning and Technical Affairs Bureau (กองวิชาการแผนภาษี)', org:'Revenue Department, Ministry of Finance', group:'mof', notes:''},
+    {id:'lib_nesdc', name:'Danucha Pichayanan', position:'Secretary-General, NESDC', org:'Office of the National Economic and Social Development Council', group:'other_agencies', notes:''},
+    {id:'lib_tsri', name:'Pattamawadee Pochanukul', position:'Director', org:'Thailand Science Research and Innovation (TSRI)', group:'other_agencies', notes:''},
+    {id:'lib_pmuc', name:'Kanda Boonsothonsatit', position:'Director', org:'PMU-C – Unit for National Competitiveness Enhancement', group:'other_agencies', notes:''},
+    {id:'lib_pmua', name:'Kitti Sajjaowattana', position:'Director', org:'PMU-A – Unit for Area-Based Development', group:'other_agencies', notes:''},
+    {id:'lib_osmep', name:'Panita Chinnawat', position:'Acting Director-General', org:'OSMEP – Office of SME Promotion', group:'other_agencies', notes:'Deputy Director-General serving as acting head as of mid-2026.'},
+  ].map(o => ({...o, asOf: ASOF, updates: []}));
+
+  let state = { groups: JSON.parse(JSON.stringify(DEFAULT_GROUPS)), contacts: [],
+    library: { sections: JSON.parse(JSON.stringify(DEFAULT_LIBRARY_SECTIONS)), officials: JSON.parse(JSON.stringify(DEFAULT_LIBRARY_OFFICIALS)) } };
+  let mode = 'directory'; // 'directory' | 'library'
+  let activeGroup = 'all';
+  let activeSection = 'all';
+  let editingContactId = null;
+  let editingKind = 'contact'; // 'contact' | 'official'
+  let selectedSwatch = PALETTE[0];
+  let updateCheckContactId = null;
+  let updateCheckKind = 'contact';
+  let pendingUpdate = null;
+  let pendingPhotoDataUrl = undefined; // undefined = unchanged, null = removed, string = new photo
+  let bulkCheckResults = [];
+  let bulkChecking = false;
+
+  const $ = (id) => document.getElementById(id);
+
+  // ---------- iOS scroll lock (prevents background scrolling behind an open modal) ----------
+  let savedScrollY = 0;
+  function lockBodyScroll(){
+    savedScrollY = window.scrollY || window.pageYOffset || 0;
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${savedScrollY}px`;
+    document.body.style.left = '0';
+    document.body.style.right = '0';
+  }
+  function unlockBodyScroll(){
+    document.body.style.position = '';
+    document.body.style.top = '';
+    document.body.style.left = '';
+    document.body.style.right = '';
+    window.scrollTo(0, savedScrollY);
+  }
+
+  // ---------- Local settings (GitHub token / gist id / AI proxy url) ----------
+  function getSetting(key){ return localStorage.getItem(SETTINGS_PREFIX + key) || ''; }
+  function setSetting(key, val){
+    if(val) localStorage.setItem(SETTINGS_PREFIX + key, val);
+    else localStorage.removeItem(SETTINGS_PREFIX + key);
+  }
+
+  function setSyncStatus(kind, detail){
+    const el = $('syncStatus');
+    if(!el) return;
+    if(kind === 'synced') el.textContent = '● Synced to GitHub';
+    else if(kind === 'saving') el.textContent = '… saving to GitHub';
+    else if(kind === 'local-only') el.textContent = '○ Local only — set up in ⚙ Settings';
+    else if(kind === 'error') el.textContent = '⚠ Sync error' + (detail ? ': ' + detail : '');
+    else el.textContent = '';
+  }
+
+  // ---------- GitHub Gist storage ----------
+  function ghFetch(url, opts){
+    opts = opts || {};
+    const token = getSetting('token');
+    return fetch(url, {
+      ...opts,
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/vnd.github+json',
+        'Content-Type': 'application/json',
+        ...(opts.headers || {})
+      }
+    });
+  }
+
+  function applyLoadedState(parsed){
+    if(!parsed) return;
+    if(parsed.groups && parsed.groups.length) state.groups = parsed.groups;
+    if(parsed.contacts) state.contacts = parsed.contacts;
+    if(parsed.library){
+      if(parsed.library.sections && parsed.library.sections.length) state.library.sections = parsed.library.sections;
+      if(parsed.library.officials) state.library.officials = parsed.library.officials;
+    }
+  }
+
+  async function createGist(){
+    const res = await ghFetch('https://api.github.com/gists', {
+      method: 'POST',
+      body: JSON.stringify({
+        description: 'Counterpart Directory data (managed by the app — do not edit by hand)',
+        public: false,
+        files: { [GIST_FILENAME]: { content: JSON.stringify(state) } }
+      })
+    });
+    if(!res.ok) throw new Error(`Could not create gist (${res.status})`);
+    const data = await res.json();
+    setSetting('gistId', data.id);
+    setSyncStatus('synced');
+  }
+
+  async function pullFromGist(){
+    const gistId = getSetting('gistId');
+    const res = await ghFetch(`https://api.github.com/gists/${gistId}`);
+    if(!res.ok) throw new Error(`GitHub load failed (${res.status})`);
+    const data = await res.json();
+    const file = data.files && data.files[GIST_FILENAME];
+    if(file && file.content) applyLoadedState(JSON.parse(file.content));
+    setSyncStatus('synced');
+  }
+
+  // Adds any newer default library entries (e.g. added in an app update) that
+  // aren't already present, without touching anything the person has edited.
+  function mergeDefaultLibraryAdditions(){
+    let addedNew = false;
+    const existingSectionIds = new Set(state.library.sections.map(s => s.id));
+    DEFAULT_LIBRARY_SECTIONS.forEach(s => {
+      if(!existingSectionIds.has(s.id)){ state.library.sections.push({...s}); addedNew = true; }
+    });
+    const existingOfficialIds = new Set(state.library.officials.map(o => o.id));
+    DEFAULT_LIBRARY_OFFICIALS.forEach(o => {
+      if(!existingOfficialIds.has(o.id)){ state.library.officials.push({...o, updates: []}); addedNew = true; }
+    });
+    return addedNew;
+  }
+
+  async function loadData(){
+    const cached = localStorage.getItem(LOCAL_CACHE_KEY);
+    if(cached){
+      try{ applyLoadedState(JSON.parse(cached)); }catch(e){}
+    }
+    mergeDefaultLibraryAdditions();
+    render();
+
+    const token = getSetting('token');
+    if(!token){ setSyncStatus('local-only'); return; }
+    try{
+      const gistId = getSetting('gistId');
+      if(gistId) await pullFromGist();
+      else await createGist();
+      mergeDefaultLibraryAdditions();
+      localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify(state));
+      render();
+    }catch(e){
+      console.error('GitHub sync failed, staying on local data:', e);
+      setSyncStatus('error', e.message);
+    }
+  }
+
+  async function saveData(){
+    localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify(state));
+    const token = getSetting('token');
+    const gistId = getSetting('gistId');
+    if(!token || !gistId){ setSyncStatus('local-only'); return; }
+    setSyncStatus('saving');
+    try{
+      const res = await ghFetch(`https://api.github.com/gists/${gistId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ files: { [GIST_FILENAME]: { content: JSON.stringify(state) } } })
+      });
+      if(!res.ok) throw new Error(`GitHub save failed (${res.status})`);
+      setSyncStatus('synced');
+    }catch(e){
+      console.error('Could not save directory to GitHub:', e);
+      setSyncStatus('error', e.message);
+    }
+  }
+
+  function groupById(id){ return state.groups.find(g => g.id === id); }
+  function sectionById(id){ return state.library.sections.find(g => g.id === id); }
+
+  function nextSwatchColor(list){
+    const used = new Set(list.map(g => g.color));
+    return PALETTE.find(c => !used.has(c)) || PALETTE[list.length % PALETTE.length];
+  }
+
+  function uid(){ return 'c_' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+  // ---------- Rendering ----------
+  function renderGroupList(){
+    const list = $('groupList');
+    const counts = {};
+    state.contacts.forEach(c => counts[c.group] = (counts[c.group]||0) + 1);
+
+    let html = `<div class="group-tab ${activeGroup==='all'?'active':''}" data-group="all">
+      <span class="group-dot" style="background:#EDEBE3;"></span>
+      <span class="g-name">All contacts</span>
+      <span class="g-count">${state.contacts.length}</span>
+    </div>`;
+
+    state.groups.forEach(g => {
+      html += `<div class="group-tab ${activeGroup===g.id?'active':''}" data-group="${g.id}">
+        <span class="group-dot" style="background:${g.color};"></span>
+        <span class="g-name">${escapeHtml(g.name)}</span>
+        <span class="g-count">${counts[g.id]||0}</span>
+      </div>`;
+    });
+    list.innerHTML = html;
+    list.querySelectorAll('.group-tab').forEach(el => {
+      el.addEventListener('click', () => { activeGroup = el.dataset.group; render(); });
+    });
+  }
+
+  function renderSectionList(){
+    const list = $('groupList');
+    const counts = {};
+    state.library.officials.forEach(o => counts[o.group] = (counts[o.group]||0) + 1);
+
+    let html = `<div class="group-tab ${activeSection==='all'?'active':''}" data-section="all">
+      <span class="group-dot" style="background:#EDEBE3;"></span>
+      <span class="g-name">All entries</span>
+      <span class="g-count">${state.library.officials.length}</span>
+    </div>`;
+
+    state.library.sections.forEach(g => {
+      html += `<div class="group-tab ${activeSection===g.id?'active':''}" data-section="${g.id}">
+        <span class="group-dot" style="background:${g.color};"></span>
+        <span class="g-name">${escapeHtml(g.name)}</span>
+        <span class="g-count">${counts[g.id]||0}</span>
+      </div>`;
+    });
+    list.innerHTML = html;
+    list.querySelectorAll('.group-tab').forEach(el => {
+      el.addEventListener('click', () => { activeSection = el.dataset.section; render(); });
+    });
+  }
+
+  function escapeHtml(str){
+    if(!str) return '';
+    return str.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  }
+
+  function initials(name){
+    if(!name) return '?';
+    const parts = name.trim().split(/\s+/);
+    return ((parts[0]||'')[0] + (parts.length>1 ? parts[parts.length-1][0] : '')).toUpperCase();
+  }
+
+  function cardHtml(entity, chip, kind){
+    const avatar = entity.photo
+      ? `<img class="avatar" src="${entity.photo}" alt="">`
+      : `<div class="avatar">${initials(entity.name)}</div>`;
+    return `
+      <div class="card" data-id="${entity.id}" data-kind="${kind}">
+        <div class="card-actions">
+          <button class="icon-btn update-btn" title="Check for updates">⟲</button>
+          <button class="icon-btn edit-btn" title="Edit">✎</button>
+        </div>
+        <div class="row-top" style="gap:12px;">
+          ${avatar}
+          <div>
+            <h3>${escapeHtml(entity.name)}</h3>
+            ${entity.position ? `<p class="position">${escapeHtml(entity.position)}</p>` : ''}
+            <p class="org">${escapeHtml(entity.org||'')}</p>
+          </div>
+        </div>
+        ${entity.email ? `<div class="field"><span class="lbl">@</span><span>${escapeHtml(entity.email)}</span></div>` : ''}
+        ${entity.phone ? `<div class="field"><span class="lbl">#</span><span>${escapeHtml(entity.phone)}</span></div>` : ''}
+        ${entity.notes ? `<div class="notes">${escapeHtml(entity.notes)}</div>` : ''}
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-top:10px;">
+          ${kind==='contact'
+            ? (entity.met ? `<span class="met">📍 ${escapeHtml(entity.met)}</span>` : '<span></span>')
+            : `<span class="verified-tag">${entity.updates && entity.updates.length ? 'verified ' + new Date(entity.updates[0].date).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : 'as of ' + escapeHtml(entity.asOf||'')}</span>`}
+          <span class="group-chip"><span class="chip-dot" style="background:${chip.color};"></span>${escapeHtml(chip.name)}</span>
+        </div>
+      </div>`;
+  }
+
+  function wireCards(grid){
+    grid.querySelectorAll('.card').forEach(card => {
+      const kind = card.dataset.kind;
+      card.querySelector('.edit-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        openContactModal(card.dataset.id, kind);
+      });
+      card.querySelector('.update-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        openUpdateCheck(card.dataset.id, kind);
+      });
+    });
+  }
+
+  function renderCards(){
+    const grid = $('cardsGrid');
+    const empty = $('emptyState');
+    const q = $('searchInput').value.trim().toLowerCase();
+
+    let list = state.contacts.filter(c => activeGroup==='all' || c.group === activeGroup);
+    if(q){
+      list = list.filter(c =>
+        (c.name||'').toLowerCase().includes(q) ||
+        (c.org||'').toLowerCase().includes(q) ||
+        (c.position||'').toLowerCase().includes(q) ||
+        (c.met||'').toLowerCase().includes(q)
+      );
+    }
+    list = list.slice().sort((a,b) => (a.name||'').localeCompare(b.name||''));
+
+    const titleEl = $('viewTitle'), subEl = $('viewSub');
+    if(activeGroup==='all'){
+      titleEl.textContent = 'All counterparts';
+      subEl.textContent = q ? `${list.length} match${list.length===1?'':'es'} for "${q}"` : 'Every group, alphabetical';
+    } else {
+      const g = groupById(activeGroup);
+      titleEl.textContent = g ? g.name : 'Group';
+      subEl.textContent = q ? `${list.length} match${list.length===1?'':'es'} for "${q}"` : `${list.length} contact${list.length===1?'':'s'}`;
+    }
+
+    if(list.length === 0){
+      grid.style.display = 'none';
+      empty.style.display = 'block';
+      $('emptyTitle').textContent = q ? 'No matches' : 'No contacts yet';
+      $('emptyText').textContent = q ? 'Try a different name, organization, or venue.' : 'Add the people you meet across ministries, banks, and campuses.';
+      grid.innerHTML = '';
+      $('totalCount').textContent = `${state.contacts.length} contact${state.contacts.length===1?'':'s'}`;
+      return;
+    }
+    grid.style.display = 'grid';
+    empty.style.display = 'none';
+
+    grid.innerHTML = list.map(c => cardHtml(c, groupById(c.group) || {name:'Others', color:'#7030A0'}, 'contact')).join('');
+    wireCards(grid);
+    $('totalCount').textContent = `${state.contacts.length} contact${state.contacts.length===1?'':'s'}`;
+  }
+
+  function renderLibraryCards(){
+    const grid = $('cardsGrid');
+    const empty = $('emptyState');
+    const q = $('searchInput').value.trim().toLowerCase();
+
+    let officials = state.library.officials.filter(o => activeSection==='all' || o.group === activeSection);
+    if(q){
+      officials = officials.filter(o =>
+        (o.name||'').toLowerCase().includes(q) ||
+        (o.org||'').toLowerCase().includes(q) ||
+        (o.position||'').toLowerCase().includes(q)
+      );
+    }
+
+    const titleEl = $('viewTitle'), subEl = $('viewSub');
+    if(activeSection==='all'){
+      titleEl.textContent = 'Government structure library';
+      subEl.textContent = q ? `${officials.length} match${officials.length===1?'':'es'} for "${q}"` : 'Executive leadership and key fiscal agencies';
+    } else {
+      const s = sectionById(activeSection);
+      titleEl.textContent = s ? s.name : 'Section';
+      subEl.textContent = q ? `${officials.length} match${officials.length===1?'':'es'} for "${q}"` : `${officials.length} ${officials.length===1?'entry':'entries'}`;
+    }
+
+    if(officials.length === 0){
+      grid.style.display = 'none';
+      empty.style.display = 'block';
+      $('emptyTitle').textContent = q ? 'No matches' : 'No entries yet';
+      $('emptyText').textContent = q ? 'Try a different name, agency, or title.' : 'Add key officials and agency heads to build your reference.';
+      grid.innerHTML = '';
+      $('totalCount').textContent = `${state.library.officials.length} entries`;
+      return;
+    }
+    grid.style.display = 'block';
+    empty.style.display = 'none';
+
+    const sectionsToShow = activeSection==='all' ? state.library.sections : state.library.sections.filter(s => s.id===activeSection);
+    let html = '';
+    sectionsToShow.forEach(s => {
+      const items = officials.filter(o => o.group === s.id);
+      if(!items.length) return;
+      items.sort((a,b) => (a.name||'').localeCompare(b.name||''));
+      html += `<div class="section-heading"><h4>${escapeHtml(s.name)}</h4><span class="rule"></span><span class="count">${items.length}</span></div>`;
+      html += `<div class="cards-grid">${items.map(o => cardHtml(o, s, 'official')).join('')}</div>`;
+    });
+    grid.innerHTML = html || '<div class="empty"><div class="glyph">◇</div><h3>No matches</h3></div>';
+    wireCards(grid);
+    $('totalCount').textContent = `${state.library.officials.length} entries`;
+  }
+
+  function populateGroupSelect(kind){
+    const sel = $('f_group');
+    const source = kind === 'official' ? state.library.sections : state.groups;
+    sel.innerHTML = source.map(g => `<option value="${g.id}">${escapeHtml(g.name)}</option>`).join('');
+  }
+
+  function render(){
+    if(mode === 'library'){
+      renderSectionList();
+      renderLibraryCards();
+    } else {
+      renderGroupList();
+      renderCards();
+    }
+  }
+
+  // ---------- Contact modal ----------
+  function openContactModal(id, kind){
+    editingContactId = id || null;
+    editingKind = kind || 'contact';
+    const isOfficial = editingKind === 'official';
+    populateGroupSelect(editingKind);
+    const source = isOfficial ? state.library.officials : state.contacts;
+    const c = id ? source.find(x => x.id === id) : null;
+
+    $('contactModalTitle').textContent = c ? (isOfficial ? 'Edit official' : 'Edit contact') : (isOfficial ? 'Add official' : 'Add contact');
+    $('f_position_label').textContent = isOfficial ? 'Title / position' : 'Recent position';
+    $('f_org_label').textContent = isOfficial ? 'Agency / Ministry *' : 'Organization *';
+    $('f_group_label').textContent = isOfficial ? 'Section' : 'Group';
+    $('scanCardBtn').style.display = isOfficial ? 'none' : 'flex';
+    $('contactOnlyFields1').style.display = isOfficial ? 'none' : 'grid';
+    $('contactOnlyFields2').style.display = isOfficial ? 'none' : 'block';
+
+    $('f_name').value = c ? c.name||'' : '';
+    $('f_position').value = c ? c.position||'' : '';
+    $('f_org').value = c ? c.org||'' : '';
+    $('f_email').value = c ? c.email||'' : '';
+    $('f_phone').value = c ? c.phone||'' : '';
+    $('f_met').value = c ? c.met||'' : '';
+    $('f_notes').value = c ? c.notes||'' : '';
+    if(isOfficial){
+      $('f_group').value = c ? c.group : (activeSection!=='all' ? activeSection : state.library.sections[0].id);
+    } else {
+      $('f_group').value = c ? c.group : (activeGroup!=='all' ? activeGroup : state.groups[0].id);
+    }
+    $('deleteContactBtn').style.visibility = c ? 'visible' : 'hidden';
+    $('deleteContactBtn').textContent = isOfficial ? 'Delete entry' : 'Delete contact';
+    pendingPhotoDataUrl = undefined;
+    setPhotoPreview(c ? c.photo : null, c ? c.name : '');
+    renderUpdateHistory(c);
+    $('contactOverlay').classList.add('show');
+    lockBodyScroll();
+    setTimeout(() => $('f_name').focus(), 50);
+  }
+  function closeContactModal(){ $('contactOverlay').classList.remove('show'); editingContactId = null; unlockBodyScroll(); }
+
+  function renderUpdateHistory(c){
+    const wrap = $('updateHistoryWrap');
+    if(!c || !c.updates || !c.updates.length){ wrap.style.display = 'none'; return; }
+    wrap.style.display = 'block';
+    $('updateHistoryList').innerHTML = c.updates.map(u => {
+      const d = new Date(u.date).toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'});
+      const tag = u.applied
+        ? '<span style="color:#00713a; font-family:\'IBM Plex Mono\', monospace; font-size:11px;">applied</span>'
+        : '<span style="color:#9a9686; font-family:\'IBM Plex Mono\', monospace; font-size:11px;">logged only</span>';
+      return `<div style="padding:7px 0; border-bottom:1px solid var(--line); font-size:12.5px; color:var(--ink);">
+        <div style="display:flex; justify-content:space-between;"><strong>${d}</strong> ${tag}</div>
+        <div>${escapeHtml(u.position||'—')}${u.org ? ' · ' + escapeHtml(u.org) : ''}</div>
+        ${u.note ? `<div style="color:var(--ink-soft); font-size:11.5px; margin-top:2px;">${escapeHtml(u.note)}</div>` : ''}
+      </div>`;
+    }).join('');
+  }
+
+  async function saveContact(){
+    const isOfficial = editingKind === 'official';
+    const name = $('f_name').value.trim();
+    const org = $('f_org').value.trim();
+    if(!name || !org){
+      alert(isOfficial ? 'Name and Agency/Ministry are required.' : 'Name and Organization are required.');
+      return;
+    }
+    const data = {
+      name, org,
+      position: $('f_position').value.trim(),
+      notes: $('f_notes').value.trim(),
+      group: $('f_group').value,
+    };
+    if(pendingPhotoDataUrl !== undefined) data.photo = pendingPhotoDataUrl; // null clears it, string sets it
+    if(!isOfficial){
+      data.email = $('f_email').value.trim();
+      data.phone = $('f_phone').value.trim();
+      data.met = $('f_met').value.trim();
+    }
+    const targetArray = isOfficial ? state.library.officials : state.contacts;
+    if(editingContactId){
+      const idx = targetArray.findIndex(c => c.id === editingContactId);
+      if(idx > -1) targetArray[idx] = {...targetArray[idx], ...data};
+    } else {
+      targetArray.push({id: uid(), createdAt: Date.now(), updates: [], ...data});
+    }
+    await saveData();
+    closeContactModal();
+    render();
+  }
+
+  async function deleteContact(){
+    if(!editingContactId) return;
+    const isOfficial = editingKind === 'official';
+    if(!confirm(isOfficial ? 'Delete this entry? This cannot be undone.' : 'Delete this contact? This cannot be undone.')) return;
+    if(isOfficial){
+      state.library.officials = state.library.officials.filter(c => c.id !== editingContactId);
+    } else {
+      state.contacts = state.contacts.filter(c => c.id !== editingContactId);
+    }
+    await saveData();
+    closeContactModal();
+    render();
+  }
+
+  // ---------- Group modal ----------
+  let groupModalKind = 'group'; // 'group' | 'section'
+  function renderSwatches(){
+    const wrap = $('g_swatches');
+    const list = groupModalKind === 'section' ? state.library.sections : state.groups;
+    selectedSwatch = nextSwatchColor(list);
+    wrap.innerHTML = PALETTE.map(c =>
+      `<div class="swatch ${c===selectedSwatch?'selected':''}" style="background:${c};" data-color="${c}"></div>`
+    ).join('');
+    wrap.querySelectorAll('.swatch').forEach(sw => {
+      sw.addEventListener('click', () => {
+        selectedSwatch = sw.dataset.color;
+        wrap.querySelectorAll('.swatch').forEach(s => s.classList.remove('selected'));
+        sw.classList.add('selected');
+      });
+    });
+  }
+  function openGroupModal(){
+    groupModalKind = mode === 'library' ? 'section' : 'group';
+    $('groupModalTitle').textContent = groupModalKind === 'section' ? 'Add section' : 'Add group';
+    $('g_name').placeholder = groupModalKind === 'section' ? 'e.g. State Enterprises' : 'e.g. Development Partners';
+    $('g_name').value = '';
+    renderSwatches();
+    $('groupOverlay').classList.add('show');
+    lockBodyScroll();
+    setTimeout(() => $('g_name').focus(), 50);
+  }
+  function closeGroupModal(){ $('groupOverlay').classList.remove('show'); unlockBodyScroll(); }
+  async function saveGroup(){
+    const name = $('g_name').value.trim();
+    if(!name){ alert('Give it a name.'); return; }
+    const id = 'g_' + Date.now().toString(36);
+    if(groupModalKind === 'section'){
+      state.library.sections.push({id, name, color: selectedSwatch, builtin:false});
+      activeSection = id;
+    } else {
+      state.groups.push({id, name, color: selectedSwatch, builtin:false});
+      activeGroup = id;
+    }
+    await saveData();
+    closeGroupModal();
+    render();
+  }
+
+  // ---------- Photo upload ----------
+  function setPhotoPreview(photo, name){
+    const el = $('f_photo_preview');
+    if(photo){
+      el.innerHTML = '';
+      el.style.background = 'transparent';
+      const img = document.createElement('img');
+      img.src = photo;
+      img.style.cssText = 'width:100%;height:100%;border-radius:50%;object-fit:cover;';
+      el.appendChild(img);
+      $('photoRemoveBtn').style.display = 'inline-block';
+    } else {
+      el.style.background = 'var(--navy)';
+      el.textContent = initials(name);
+      $('photoRemoveBtn').style.display = 'none';
+    }
+  }
+
+  function compressImageToDataUrl(file){
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          const maxDim = 240;
+          let { width, height } = img;
+          if(width > height){ if(width > maxDim){ height = Math.round(height * maxDim / width); width = maxDim; } }
+          else { if(height > maxDim){ width = Math.round(width * maxDim / height); height = maxDim; } }
+          const canvas = document.createElement('canvas');
+          canvas.width = width; canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', 0.78));
+        };
+        img.onerror = () => reject(new Error('Could not load image'));
+        img.src = reader.result;
+      };
+      reader.onerror = () => reject(new Error('Could not read image'));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // ---------- AI proxy (card scan + web-search update checks) ----------
+  // Both features POST to /v1/messages. By default that resolves to this
+  // same site's own address, handled by functions/v1/messages.js (a
+  // Cloudflare Pages Function deployed alongside the static site) — it
+  // holds the real Anthropic API key server-side so it's never exposed in
+  // this file. Setting an "AI proxy URL" in Settings overrides that with a
+  // separately-hosted proxy instead (see worker.js), for sites not hosted
+  // on Cloudflare Pages.
+  async function callClaude(body){
+    const proxy = getSetting('proxyUrl');
+    const base = proxy ? proxy.replace(/\/$/,'') : '';
+    const res = await fetch(`${base}/v1/messages`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    if(!res.ok){
+      const errText = await res.text().catch(() => '');
+      throw new Error(`AI request failed (${res.status}): ${errText.slice(0,200)}`);
+    }
+    return res.json();
+  }
+
+  // ---------- Name card scan ----------
+  // Resizes a photo down to a manageable size before sending it to the API.
+  // Full-resolution iPhone photos (5-10MB) can be too large for the request;
+  // 1400px on the long edge keeps card text legible while cutting payload size a lot.
+  function fileToScanBase64(file){
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          const maxDim = 1400;
+          let { width, height } = img;
+          if(width > height){ if(width > maxDim){ height = Math.round(height * maxDim / width); width = maxDim; } }
+          else { if(height > maxDim){ width = Math.round(width * maxDim / height); height = maxDim; } }
+          const canvas = document.createElement('canvas');
+          canvas.width = width; canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', 0.85).split(',')[1]);
+        };
+        img.onerror = () => reject(new Error('Could not load image'));
+        img.src = reader.result;
+      };
+      reader.onerror = () => reject(new Error('Could not read image'));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function handleCardImage(files){
+    const statusEl = $('scanStatus');
+    const btn = $('scanCardBtn');
+    statusEl.style.display = 'block';
+    statusEl.classList.remove('error');
+    statusEl.textContent = files.length > 1 ? 'Reading both sides…' : 'Reading the card…';
+    btn.disabled = true;
+    try{
+      const imageBlocks = await Promise.all(files.map(async (file) => ({
+        type: 'image',
+        source: { type: 'base64', media_type: 'image/jpeg', data: await fileToScanBase64(file) }
+      })));
+
+      const instructions = `You will be shown one or more photos of a business/name card. They may be the front and back of the same card, the same card in different lighting or angles, or a card in a portrait or landscape layout — treat them as one card and combine everything you can read from all images into a single set of fields.
+
+Business cards vary widely, so read carefully and handle:
+- Bilingual cards (Thai and English on the same or opposite sides) — if both languages appear, prefer the English rendering of the name and organization for the main fields, but still use whatever is clearest if only one language is present.
+- Thai government-style cards, which often list a Thai honorific and full name, then job title, then department/division, then ministry or agency, often stacked on separate lines, sometimes with a Thai royal or ministry emblem instead of a company logo.
+- Cards with multiple phone numbers (mobile, office extension, fax) — prefer a mobile or direct line over a main office switchboard or a fax number; label a fax number is never the phone field.
+- Vertically oriented (portrait) cards, or text printed sideways/rotated — mentally rotate as needed.
+- Cards where the name is styled larger/bolder than the title, or where the title appears above the name instead of below it.
+- Minimalist cards with little more than a name, a single contact method, and a QR code — extract whatever fields are actually present; don't invent missing ones.
+- Slightly blurry, angled, or partially shadowed photos — do your best with what's legible rather than giving up.
+
+Extract these fields and respond with ONLY a raw JSON object, no markdown fences, no preamble: {"name": "", "position": "", "org": "", "email": "", "phone": ""}.
+- "name": the person's full name as printed, including any title (Dr., Khun, M.L., etc.) if shown.
+- "position": their job title or role.
+- "org": the company, agency, ministry, or department name (combine department + ministry if both are shown, e.g. "Fiscal Policy Office, Ministry of Finance").
+- "email" and "phone": as printed; if a field genuinely is not visible anywhere across the photo(s), leave it as an empty string rather than guessing.
+If the photo is too unclear to identify a person's name at all, return {"name": "", "position": "", "org": "", "email": "", "phone": ""}.`;
+
+      const data = await callClaude({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        messages: [{
+          role: 'user',
+          content: [...imageBlocks, { type: 'text', text: instructions }]
+        }]
+      });
+      const textBlock = (data.content || []).find(b => b.type === 'text');
+      if(!textBlock) throw new Error('No text in scan response: ' + JSON.stringify(data).slice(0,200));
+      const parsed = extractJson(textBlock.text);
+      if(!parsed) throw new Error('Could not parse scan result: ' + textBlock.text.slice(0,200));
+
+      if(!parsed.name && !parsed.org && !parsed.email && !parsed.phone){
+        statusEl.classList.add('error');
+        statusEl.textContent = "Couldn't make out enough of that card — try a straighter, better-lit photo, or enter details manually.";
+        return;
+      }
+
+      if(parsed.name) $('f_name').value = parsed.name;
+      if(parsed.position) $('f_position').value = parsed.position;
+      if(parsed.org) $('f_org').value = parsed.org;
+      if(parsed.email) $('f_email').value = parsed.email;
+      if(parsed.phone) $('f_phone').value = parsed.phone;
+
+      statusEl.classList.remove('error');
+      statusEl.textContent = 'Filled in — please check the details before saving.';
+      setTimeout(() => { statusEl.style.display = 'none'; }, 3500);
+    }catch(e){
+      console.error('Card scan failed:', e);
+      statusEl.classList.add('error');
+      statusEl.textContent = "Couldn't read that card: " + (e && e.message ? e.message : 'unknown error') + " — try again or enter details manually.";
+    }finally{
+      btn.disabled = false;
+    }
+  }
+
+  // ---------- Check for updates (web search) ----------
+  function extractJson(text){
+    if(!text) return null;
+    const cleaned = text.replace(/```json|```/g, '').trim();
+    try{ return JSON.parse(cleaned); }catch(e){}
+    const match = cleaned.match(/\{[\s\S]*\}/);
+    if(match){ try{ return JSON.parse(match[0]); }catch(e){} }
+    return null;
+  }
+
+  function openUpdateCheck(id, kind){
+    const isOfficial = kind === 'official';
+    const source = isOfficial ? state.library.officials : state.contacts;
+    const c = source.find(x => x.id === id);
+    if(!c) return;
+    updateCheckContactId = id;
+    updateCheckKind = kind || 'contact';
+    pendingUpdate = null;
+    $('updateCurrent').innerHTML = `Currently on file: <strong>${escapeHtml(c.position||'—')}</strong> at <strong>${escapeHtml(c.org||'—')}</strong>`;
+    $('updateLoading').style.display = 'block';
+    $('updateLoading').textContent = 'Searching the web…';
+    $('updateResult').style.display = 'none';
+    $('updateNotFound').style.display = 'none';
+    $('updateFoot').style.display = 'none';
+    $('updateOverlay').classList.add('show');
+    lockBodyScroll();
+    runUpdateSearch(c, updateCheckKind);
+  }
+  function closeUpdateModal(){ $('updateOverlay').classList.remove('show'); updateCheckContactId = null; pendingUpdate = null; unlockBodyScroll(); }
+
+  async function runUpdateSearch(c, kind){
+    try{
+      const context = kind === 'official'
+        ? 'This is a Thai government official or agency head. Confirm the current officeholder — government appointments can change.'
+        : 'This is a professional counterpart in Thailand\'s economic and public policy sector.';
+      const prompt = `Search the web for the current professional position and organization of "${c.name}"${c.org ? `, last known to be affiliated with ${c.org}` : ''}${c.position ? ` as ${c.position}` : ''}. ${context} Only report a finding if you locate specific, credible, reasonably recent information confirming their current role — do not guess or infer from unrelated namesakes. Respond with ONLY a raw JSON object, no markdown fences, no other text, in this exact shape: {"found": true or false, "position": "", "org": "", "asOf": "", "note": "", "source": ""}. "asOf" is the approximate date of the source if known. "note" is one short sentence of relevant context. "source" is the publication or site name. If nothing reliable is found, set "found" to false and leave position/org empty.`;
+      const data = await callClaude({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }],
+        tools: [{ type: 'web_search_20250305', name: 'web_search' }]
+      });
+      const texts = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n');
+      const parsed = extractJson(texts);
+      $('updateLoading').style.display = 'none';
+
+      if(parsed && parsed.found && (parsed.position || parsed.org)){
+        pendingUpdate = parsed;
+        $('updateResult').style.display = 'block';
+        $('updateFoundPosition').textContent = parsed.position || '—';
+        $('updateFoundOrg').textContent = parsed.org || '—';
+        $('updateNote').textContent = [parsed.note, parsed.source ? `Source: ${parsed.source}` : '', parsed.asOf ? `As of ${parsed.asOf}` : ''].filter(Boolean).join(' · ');
+        $('updateFoot').style.display = 'flex';
+      } else {
+        $('updateNotFound').style.display = 'block';
+      }
+    }catch(e){
+      console.error('Update search failed:', e);
+      $('updateLoading').style.display = 'none';
+      $('updateNotFound').style.display = 'block';
+      $('updateNotFound').textContent = (e && e.message) || "Couldn't complete the search — try again in a moment.";
+    }
+  }
+
+  async function resolveUpdate(apply){
+    const isOfficial = updateCheckKind === 'official';
+    const source = isOfficial ? state.library.officials : state.contacts;
+    const c = source.find(x => x.id === updateCheckContactId);
+    if(!c || !pendingUpdate) return;
+    if(!c.updates) c.updates = [];
+    c.updates.unshift({
+      date: Date.now(),
+      position: pendingUpdate.position,
+      org: pendingUpdate.org,
+      note: pendingUpdate.note,
+      source: pendingUpdate.source,
+      applied: apply
+    });
+    if(apply){
+      if(pendingUpdate.position) c.position = pendingUpdate.position;
+      if(pendingUpdate.org) c.org = pendingUpdate.org;
+      if(isOfficial && pendingUpdate.asOf) c.asOf = pendingUpdate.asOf;
+    }
+    await saveData();
+    closeUpdateModal();
+    render();
+  }
+
+  // ---------- Bulk refresh-all ----------
+  function normalize(s){ return (s||'').trim().toLowerCase(); }
+
+  async function fetchUpdateForEntity(entity, kind){
+    const context = kind === 'official'
+      ? 'This is a Thai government official or agency head. Confirm the current officeholder — government appointments can change.'
+      : "This is a professional counterpart in Thailand's economic and public policy sector.";
+    const prompt = `Search the web for the current professional position and organization of "${entity.name}"${entity.org ? `, last known to be affiliated with ${entity.org}` : ''}${entity.position ? ` as ${entity.position}` : ''}. ${context} Only report a finding if you locate specific, credible, reasonably recent information confirming their current role — do not guess or infer from unrelated namesakes. Respond with ONLY a raw JSON object, no markdown fences, no other text, in this exact shape: {"found": true or false, "position": "", "org": "", "asOf": "", "note": "", "source": ""}. If nothing reliable is found, set "found" to false and leave position/org empty.`;
+    try{
+      const data = await callClaude({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }],
+        tools: [{ type: 'web_search_20250305', name: 'web_search' }]
+      });
+      const texts = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n');
+      return extractJson(texts);
+    }catch(e){
+      console.error('Bulk update search failed for', entity.name, e);
+      return null;
+    }
+  }
+
+  async function runBulkCheck(){
+    if(bulkChecking) return;
+    const kind = mode === 'library' ? 'official' : 'contact';
+    let list = mode === 'library'
+      ? state.library.officials.filter(o => activeSection==='all' || o.group === activeSection)
+      : state.contacts.filter(c => activeGroup==='all' || c.group === activeGroup);
+    if(list.length === 0) return;
+
+    bulkChecking = true;
+    bulkCheckResults = [];
+    const btn = $('refreshAllBtn');
+    btn.disabled = true;
+
+    for(let i = 0; i < list.length; i++){
+      const entity = list[i];
+      btn.innerHTML = `<span class="spin">⟲</span> Checking ${i+1} of ${list.length}…`;
+      const parsed = await fetchUpdateForEntity(entity, kind);
+      if(parsed && parsed.found && (parsed.position || parsed.org)){
+        const posChanged = parsed.position && normalize(parsed.position) !== normalize(entity.position);
+        const orgChanged = parsed.org && normalize(parsed.org) !== normalize(entity.org);
+        if(posChanged || orgChanged){
+          bulkCheckResults.push({
+            id: entity.id, kind,
+            name: entity.name,
+            currentPosition: entity.position, currentOrg: entity.org,
+            foundPosition: parsed.position, foundOrg: parsed.org,
+            note: parsed.note, source: parsed.source, asOf: parsed.asOf
+          });
+        }
+      }
+    }
+
+    bulkChecking = false;
+    btn.disabled = false;
+    btn.innerHTML = '⟲ Refresh all';
+    renderAlertBanner();
+  }
+
+  function renderAlertBanner(){
+    const el = $('alertBanner');
+    if(bulkCheckResults.length === 0){
+      el.style.display = 'block';
+      el.innerHTML = `<div class="alert-toast"><span>✓ Checked — everyone's info matches what's on file.</span><button class="alert-dismiss-all" id="toastDismissBtn">Dismiss</button></div>`;
+      $('toastDismissBtn').addEventListener('click', () => { el.style.display = 'none'; });
+      setTimeout(() => { if(el.querySelector('.alert-toast')) el.style.display = 'none'; }, 6000);
+      return;
+    }
+    el.style.display = 'block';
+    el.innerHTML = `<div class="alert-banner">
+      <div class="alert-head">
+        <span class="alert-title">⚠ ${bulkCheckResults.length} possible update${bulkCheckResults.length===1?'':'s'} found</span>
+        <button class="alert-dismiss-all" id="dismissAllBtn">Dismiss all</button>
+      </div>
+      ${bulkCheckResults.map(r => `
+        <div class="alert-row" data-rid="${r.id}">
+          <div class="alert-info">
+            <strong>${escapeHtml(r.name)}</strong>
+            <div class="alert-change">was: ${escapeHtml(r.currentPosition||'—')}${r.currentOrg ? ' · ' + escapeHtml(r.currentOrg) : ''}</div>
+            <div class="alert-change">found: ${escapeHtml(r.foundPosition||r.currentPosition||'—')}${r.foundOrg ? ' · ' + escapeHtml(r.foundOrg) : ''}${r.source ? ` (${escapeHtml(r.source)})` : ''}</div>
+          </div>
+          <div class="alert-actions">
+            <button class="alert-btn" data-act="dismiss">Dismiss</button>
+            <button class="alert-btn" data-act="log">Log only</button>
+            <button class="alert-btn apply" data-act="apply">Apply</button>
+          </div>
+        </div>`).join('')}
+    </div>`;
+    $('dismissAllBtn').addEventListener('click', () => { bulkCheckResults = []; el.style.display = 'none'; });
+    el.querySelectorAll('.alert-row').forEach(row => {
+      const rid = row.dataset.rid;
+      row.querySelectorAll('.alert-btn').forEach(btn => {
+        btn.addEventListener('click', () => resolveBulkRow(rid, btn.dataset.act));
+      });
+    });
+  }
+
+  async function resolveBulkRow(id, action){
+    const r = bulkCheckResults.find(x => x.id === id);
+    if(!r) return;
+    if(action !== 'dismiss'){
+      const source = r.kind === 'official' ? state.library.officials : state.contacts;
+      const entity = source.find(x => x.id === id);
+      if(entity){
+        if(!entity.updates) entity.updates = [];
+        entity.updates.unshift({
+          date: Date.now(),
+          position: r.foundPosition, org: r.foundOrg,
+          note: r.note, source: r.source, applied: action === 'apply'
+        });
+        if(action === 'apply'){
+          if(r.foundPosition) entity.position = r.foundPosition;
+          if(r.foundOrg) entity.org = r.foundOrg;
+          if(r.kind === 'official' && r.asOf) entity.asOf = r.asOf;
+        }
+        await saveData();
+        render();
+      }
+    }
+    bulkCheckResults = bulkCheckResults.filter(x => x.id !== id);
+    renderAlertBanner();
+    if(bulkCheckResults.length === 0) $('alertBanner').style.display = 'none';
+  }
+
+  // ---------- Settings modal ----------
+  function openSettingsModal(){
+    $('s_token').value = getSetting('token');
+    $('s_gist_id').value = getSetting('gistId');
+    $('s_proxy_url').value = getSetting('proxyUrl');
+    $('settingsStatus').textContent = '';
+    $('settingsOverlay').classList.add('show');
+    lockBodyScroll();
+  }
+  function closeSettingsModal(){ $('settingsOverlay').classList.remove('show'); unlockBodyScroll(); }
+
+  async function saveSettings(){
+    const token = $('s_token').value.trim();
+    const gistId = $('s_gist_id').value.trim();
+    const proxyUrl = $('s_proxy_url').value.trim();
+    if(!token){ alert('A GitHub token is required to enable GitHub storage.'); return; }
+    setSetting('token', token);
+    setSetting('gistId', gistId);
+    setSetting('proxyUrl', proxyUrl);
+    $('settingsStatus').textContent = 'Connecting…';
+    try{
+      if(gistId) await pullFromGist();
+      else await createGist();
+      mergeDefaultLibraryAdditions();
+      localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify(state));
+      closeSettingsModal();
+      render();
+    }catch(e){
+      console.error('GitHub connect failed:', e);
+      $('settingsStatus').textContent = 'Error: ' + e.message;
+      setSyncStatus('error', e.message);
+    }
+  }
+
+  // ---------- Wire up ----------
+  document.addEventListener('DOMContentLoaded', () => {
+    $('addContactBtn').addEventListener('click', () => openContactModal(null, mode === 'library' ? 'official' : 'contact'));
+    $('emptyAddBtn').addEventListener('click', () => openContactModal(null, mode === 'library' ? 'official' : 'contact'));
+    $('contactCloseBtn').addEventListener('click', closeContactModal);
+    $('cancelContactBtn').addEventListener('click', closeContactModal);
+    $('saveContactBtn').addEventListener('click', saveContact);
+    $('deleteContactBtn').addEventListener('click', deleteContact);
+    $('contactOverlay').addEventListener('click', (e) => { if(e.target.id==='contactOverlay') closeContactModal(); });
+
+    $('scanCardBtn').addEventListener('click', () => $('cardFileInput').click());
+    $('cardFileInput').addEventListener('change', (e) => {
+      const files = Array.from(e.target.files || []);
+      if(files.length) handleCardImage(files);
+      e.target.value = '';
+    });
+
+    $('photoUploadBtn').addEventListener('click', () => $('photoFileInput').click());
+    $('photoFileInput').addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      e.target.value = '';
+      if(!file) return;
+      try{
+        const dataUrl = await compressImageToDataUrl(file);
+        pendingPhotoDataUrl = dataUrl;
+        setPhotoPreview(dataUrl, $('f_name').value);
+      }catch(err){
+        console.error('Photo upload failed:', err);
+        alert("Couldn't load that image — try a different photo.");
+      }
+    });
+    $('photoRemoveBtn').addEventListener('click', () => {
+      pendingPhotoDataUrl = null;
+      setPhotoPreview(null, $('f_name').value);
+    });
+
+    $('refreshAllBtn').addEventListener('click', runBulkCheck);
+
+    $('updateCloseBtn').addEventListener('click', closeUpdateModal);
+    $('updateApplyBtn').addEventListener('click', () => resolveUpdate(true));
+    $('updateLogOnlyBtn').addEventListener('click', () => resolveUpdate(false));
+    $('updateOverlay').addEventListener('click', (e) => { if(e.target.id==='updateOverlay') closeUpdateModal(); });
+
+    $('addGroupBtn').addEventListener('click', openGroupModal);
+    $('groupCloseBtn').addEventListener('click', closeGroupModal);
+    $('cancelGroupBtn').addEventListener('click', closeGroupModal);
+    $('saveGroupBtn').addEventListener('click', saveGroup);
+    $('groupOverlay').addEventListener('click', (e) => { if(e.target.id==='groupOverlay') closeGroupModal(); });
+
+    $('settingsBtn').addEventListener('click', openSettingsModal);
+    $('settingsCloseBtn').addEventListener('click', closeSettingsModal);
+    $('settingsCancelBtn').addEventListener('click', closeSettingsModal);
+    $('settingsSaveBtn').addEventListener('click', saveSettings);
+    $('settingsOverlay').addEventListener('click', (e) => { if(e.target.id==='settingsOverlay') closeSettingsModal(); });
+
+    $('searchInput').addEventListener('input', () => { mode === 'library' ? renderLibraryCards() : renderCards(); });
+
+    $('modeDirectoryBtn').addEventListener('click', () => setMode('directory'));
+    $('modeLibraryBtn').addEventListener('click', () => setMode('library'));
+
+    document.addEventListener('keydown', (e) => {
+      if(e.key === 'Escape'){ closeContactModal(); closeGroupModal(); closeUpdateModal(); closeSettingsModal(); }
+    });
+
+    loadData();
+  });
+
+  function setMode(newMode){
+    mode = newMode;
+    bulkCheckResults = [];
+    $('alertBanner').style.display = 'none';
+    $('modeDirectoryBtn').classList.toggle('active', mode === 'directory');
+    $('modeLibraryBtn').classList.toggle('active', mode === 'library');
+    $('addContactBtn').textContent = mode === 'library' ? '+ Add official' : '+ Add contact';
+    $('emptyAddBtn').textContent = mode === 'library' ? '+ Add official' : '+ Add contact';
+    $('addGroupBtn').textContent = mode === 'library' ? '+ Add section' : '+ Add group';
+    $('searchInput').placeholder = mode === 'library' ? 'Search name, agency, title…' : 'Search name, org, position…';
+    $('searchInput').value = '';
+    render();
+  }
+})();
+</script>
+</body>
+</html>

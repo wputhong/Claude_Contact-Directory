@@ -1,0 +1,14 @@
+.env
+__pycache__/
+*.pyc
+.DS_Store
+*.egg-info/
+.venv/
+data/raw/*.xlsx
+**/.streamlit/secrets.toml
+
+# wrangler (contact-directory Worker deploy)
+.wrangler
+.dev.vars*
+!.dev.vars.example
+!.env.example
