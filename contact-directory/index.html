@@ -314,6 +314,17 @@
     text-align:center; font-size:12px; color:var(--ink-soft); margin:-10px 0 16px;
   }
   .scan-status.error{ color:#a6423d; }
+  .scan-raw-toggle{
+    display:block; margin:-10px 0 16px; text-align:center; font-size:11px;
+    color:var(--ink-soft); background:none; border:none; cursor:pointer;
+    text-decoration:underline; font-family:'IBM Plex Sans', sans-serif;
+  }
+  .scan-raw-text{
+    display:none; white-space:pre-wrap; word-break:break-word; font-family:'IBM Plex Mono', monospace;
+    font-size:11px; color:var(--ink-soft); background:var(--paper-deep); border:1px solid var(--line);
+    border-radius:7px; padding:10px 12px; margin:-8px 0 16px; max-height:160px; overflow-y:auto;
+  }
+  .scan-raw-text.show{ display:block; }
   .field-row{ margin-bottom:14px; }
   .field-row label{
     display:block; font-size:12px; font-weight:500; color:var(--ink-soft);
@@ -435,6 +446,8 @@
       <button type="button" class="scan-btn" id="scanCardBtn">📷 Scan a name card (front &amp; back OK) to fill this in</button>
       <input type="file" id="cardFileInput" accept="image/*" multiple style="display:none;">
       <div class="scan-status" id="scanStatus" style="display:none;"></div>
+      <button type="button" class="scan-raw-toggle" id="scanRawToggle" style="display:none;">Show scanned text</button>
+      <pre class="scan-raw-text" id="scanRawText"></pre>
       <div class="field-row">
         <label>Name *</label>
         <input type="text" id="f_name" placeholder="e.g. Dr. Somchai Prasert">
@@ -1048,6 +1061,10 @@
     pendingPhotoDataUrl = undefined;
     setPhotoPreview(c ? c.photo : null, c ? c.name : '');
     renderUpdateHistory(c);
+    $('scanStatus').style.display = 'none';
+    $('scanRawToggle').style.display = 'none';
+    $('scanRawToggle').textContent = 'Show scanned text';
+    $('scanRawText').classList.remove('show');
     $('contactOverlay').classList.add('show');
     lockBodyScroll();
     setTimeout(() => $('f_name').focus(), 50);
@@ -1227,16 +1244,36 @@
   }
 
   // ---------- Name card scan ----------
-  // Resizes a photo down to a manageable size before sending it to the API.
-  // Full-resolution iPhone photos (5-10MB) can be too large for the request;
-  // 1400px on the long edge keeps card text legible while cutting payload size a lot.
-  function fileToScanBase64(file){
+  // Runs entirely in the browser via Tesseract.js (OCR, WASM) — no server, no
+  // API key, no per-scan cost. Trade-off vs. the old Claude-vision version:
+  // it can only report what it reads, not reason about card layout, so field
+  // assignment below is a set of heuristics rather than true understanding.
+  // The raw recognized text is always shown (via "Show scanned text") so
+  // anything mis-assigned can be copied out by hand.
+  let tesseractLoadPromise = null;
+  function loadTesseract(){
+    if(window.Tesseract) return Promise.resolve();
+    if(tesseractLoadPromise) return tesseractLoadPromise;
+    tesseractLoadPromise = new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error('Could not load the OCR engine (check your internet connection)'));
+      document.head.appendChild(script);
+    });
+    return tesseractLoadPromise;
+  }
+
+  // Resizes to a manageable size and converts to grayscale with a contrast
+  // stretch — plain photos of glossy/dim-lit cards OCR noticeably better this
+  // way than the raw camera capture.
+  function preprocessCardImage(file){
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => {
         const img = new Image();
         img.onload = () => {
-          const maxDim = 1400;
+          const maxDim = 1600;
           let { width, height } = img;
           if(width > height){ if(width > maxDim){ height = Math.round(height * maxDim / width); width = maxDim; } }
           else { if(height > maxDim){ width = Math.round(width * maxDim / height); height = maxDim; } }
@@ -1244,7 +1281,23 @@
           canvas.width = width; canvas.height = height;
           const ctx = canvas.getContext('2d');
           ctx.drawImage(img, 0, 0, width, height);
-          resolve(canvas.toDataURL('image/jpeg', 0.85).split(',')[1]);
+
+          const imgData = ctx.getImageData(0, 0, width, height);
+          const d = imgData.data;
+          let min = 255, max = 0;
+          for(let i = 0; i < d.length; i += 4){
+            const gray = 0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2];
+            if(gray < min) min = gray;
+            if(gray > max) max = gray;
+          }
+          const range = Math.max(max - min, 1);
+          for(let i = 0; i < d.length; i += 4){
+            const gray = 0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2];
+            const stretched = Math.min(255, Math.max(0, (gray - min) * 255 / range));
+            d[i] = d[i+1] = d[i+2] = stretched;
+          }
+          ctx.putImageData(imgData, 0, 0);
+          resolve(canvas);
         };
         img.onerror = () => reject(new Error('Could not load image'));
         img.src = reader.result;
@@ -1254,50 +1307,88 @@
     });
   }
 
+  const CARD_ORG_KEYWORDS = ['ltd','co.,','co ltd','company','inc','corp','corporation','group','bank',
+    'university','institute','ministry','department','bureau','office','agency','authority','plc',
+    'foundation','faculty','school','council','commission','llc','limited','holdings','partners'];
+  const CARD_TITLE_KEYWORDS = ['director','manager','president','ceo','cfo','coo','cto','officer',
+    'engineer','consultant','analyst','secretary','chief','head of','vice','senior','chairman',
+    'governor','minister','deputy','advisor','adviser','specialist','coordinator','supervisor',
+    'founder','partner','associate','executive','representative'];
+
+  function escapeRegex(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+  function matchesCardKeyword(line, keyword){
+    // Multi-word/punctuated keywords (e.g. "co.,") stay substring matches;
+    // single words use \b so e.g. "engineer" doesn't false-match "Engineering".
+    if(/[^a-z ]/i.test(keyword)) return line.toLowerCase().includes(keyword);
+    return new RegExp('\\b' + escapeRegex(keyword) + '\\b', 'i').test(line);
+  }
+
+  function parseCardText(text){
+    const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+    const emailMatch = text.match(/[\w.+-]+@[\w-]+\.[\w.-]+/);
+    const email = emailMatch ? emailMatch[0] : '';
+
+    let phone = '';
+    for(const line of lines){
+      if(/fax/i.test(line)) continue;
+      const m = line.match(/(\+?\d[\d\-\s()]{6,}\d)/);
+      if(m){ phone = m[1].trim(); break; }
+    }
+
+    const isNoise = (line) => {
+      if(line.length < 2) return true;
+      if(line.includes('@')) return true;
+      if(phone && line.includes(phone)) return true;
+      if(/^(tel|mobile|phone|fax|email|e-mail|line id|www\.|https?:)/i.test(line)) return true;
+      return false;
+    };
+    const candidates = lines.filter(l => !isNoise(l));
+
+    let org = '';
+    let position = '';
+    const remaining = [];
+    for(const line of candidates){
+      // Title keywords checked first: Thai-style lines like "Director, Fiscal
+      // Policy Office" contain both a title word and an org-ish word ("Office"),
+      // and the title word is the less ambiguous signal.
+      if(!position && CARD_TITLE_KEYWORDS.some(k => matchesCardKeyword(line, k))){ position = line; continue; }
+      if(!org && CARD_ORG_KEYWORDS.some(k => matchesCardKeyword(line, k))){ org = line; continue; }
+      remaining.push(line);
+    }
+    const name = remaining.length ? remaining[0] : '';
+    if(!org && remaining.length > 1) org = remaining[1];
+
+    return { name, position, org, email, phone };
+  }
+
   async function handleCardImage(files){
     const statusEl = $('scanStatus');
     const btn = $('scanCardBtn');
+    const rawToggle = $('scanRawToggle');
+    const rawText = $('scanRawText');
     statusEl.style.display = 'block';
     statusEl.classList.remove('error');
-    statusEl.textContent = files.length > 1 ? 'Reading both sides…' : 'Reading the card…';
+    statusEl.textContent = 'Loading OCR engine (first scan only)…';
+    rawToggle.style.display = 'none';
+    rawText.classList.remove('show');
     btn.disabled = true;
     try{
-      const imageBlocks = await Promise.all(files.map(async (file) => ({
-        type: 'image',
-        source: { type: 'base64', media_type: 'image/jpeg', data: await fileToScanBase64(file) }
-      })));
+      await loadTesseract();
 
-      const instructions = `You will be shown one or more photos of a business/name card. They may be the front and back of the same card, the same card in different lighting or angles, or a card in a portrait or landscape layout — treat them as one card and combine everything you can read from all images into a single set of fields.
+      let combinedText = '';
+      for(let i = 0; i < files.length; i++){
+        statusEl.textContent = files.length > 1
+          ? `Reading side ${i+1} of ${files.length}…`
+          : 'Reading the card…';
+        const canvas = await preprocessCardImage(files[i]);
+        const result = await window.Tesseract.recognize(canvas, 'eng+tha');
+        combinedText += (combinedText ? '\n' : '') + (result.data.text || '');
+      }
 
-Business cards vary widely, so read carefully and handle:
-- Bilingual cards (Thai and English on the same or opposite sides) — if both languages appear, prefer the English rendering of the name and organization for the main fields, but still use whatever is clearest if only one language is present.
-- Thai government-style cards, which often list a Thai honorific and full name, then job title, then department/division, then ministry or agency, often stacked on separate lines, sometimes with a Thai royal or ministry emblem instead of a company logo.
-- Cards with multiple phone numbers (mobile, office extension, fax) — prefer a mobile or direct line over a main office switchboard or a fax number; label a fax number is never the phone field.
-- Vertically oriented (portrait) cards, or text printed sideways/rotated — mentally rotate as needed.
-- Cards where the name is styled larger/bolder than the title, or where the title appears above the name instead of below it.
-- Minimalist cards with little more than a name, a single contact method, and a QR code — extract whatever fields are actually present; don't invent missing ones.
-- Slightly blurry, angled, or partially shadowed photos — do your best with what's legible rather than giving up.
+      rawText.textContent = combinedText.trim();
+      rawToggle.style.display = combinedText.trim() ? 'block' : 'none';
 
-Extract these fields and respond with ONLY a raw JSON object, no markdown fences, no preamble: {"name": "", "position": "", "org": "", "email": "", "phone": ""}.
-- "name": the person's full name as printed, including any title (Dr., Khun, M.L., etc.) if shown.
-- "position": their job title or role.
-- "org": the company, agency, ministry, or department name (combine department + ministry if both are shown, e.g. "Fiscal Policy Office, Ministry of Finance").
-- "email" and "phone": as printed; if a field genuinely is not visible anywhere across the photo(s), leave it as an empty string rather than guessing.
-If the photo is too unclear to identify a person's name at all, return {"name": "", "position": "", "org": "", "email": "", "phone": ""}.`;
-
-      const data = await callClaude({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 1000,
-        messages: [{
-          role: 'user',
-          content: [...imageBlocks, { type: 'text', text: instructions }]
-        }]
-      });
-      const textBlock = (data.content || []).find(b => b.type === 'text');
-      if(!textBlock) throw new Error('No text in scan response: ' + JSON.stringify(data).slice(0,200));
-      const parsed = extractJson(textBlock.text);
-      if(!parsed) throw new Error('Could not parse scan result: ' + textBlock.text.slice(0,200));
-
+      const parsed = parseCardText(combinedText);
       if(!parsed.name && !parsed.org && !parsed.email && !parsed.phone){
         statusEl.classList.add('error');
         statusEl.textContent = "Couldn't make out enough of that card — try a straighter, better-lit photo, or enter details manually.";
@@ -1311,8 +1402,7 @@ If the photo is too unclear to identify a person's name at all, return {"name": 
       if(parsed.phone) $('f_phone').value = parsed.phone;
 
       statusEl.classList.remove('error');
-      statusEl.textContent = 'Filled in — please check the details before saving.';
-      setTimeout(() => { statusEl.style.display = 'none'; }, 3500);
+      statusEl.textContent = 'Filled in from OCR — please check every field, this reads text but doesn\'t understand layout.';
     }catch(e){
       console.error('Card scan failed:', e);
       statusEl.classList.add('error');
@@ -1585,6 +1675,10 @@ If the photo is too unclear to identify a person's name at all, return {"name": 
       const files = Array.from(e.target.files || []);
       if(files.length) handleCardImage(files);
       e.target.value = '';
+    });
+    $('scanRawToggle').addEventListener('click', () => {
+      const shown = $('scanRawText').classList.toggle('show');
+      $('scanRawToggle').textContent = shown ? 'Hide scanned text' : 'Show scanned text';
     });
 
     $('photoUploadBtn').addEventListener('click', () => $('photoFileInput').click());
