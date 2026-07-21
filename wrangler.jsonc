@@ -12,5 +12,12 @@
   },
   "compatibility_flags": [
     "nodejs_compat"
+  ],
+  "secrets_store_secrets": [
+    {
+      "binding": "ANTHROPIC_API_KEY",
+      "store_id": "f4379e9cde85464884daec7e780c5a88",
+      "secret_name": "ANTHROPIC_API_KEY"
+    }
   ]
 }

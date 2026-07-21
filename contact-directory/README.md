@@ -82,12 +82,17 @@ nothing to configure in Settings, on any device, including your phone.
 1. Get an API key from **console.anthropic.com → API Keys → Create Key**.
    Unlike the free hosting/storage above, Anthropic API usage is
    pay-as-you-go (a few cents per scan), not a subscription.
-2. In the Cloudflare dashboard, open this Worker project → **Settings** or
-   the **Bindings** tab → **Add binding** (or **Add** → **Secret**, wording
-   varies) → name it `ANTHROPIC_API_KEY` → paste the key.
+2. This project reads the key through Cloudflare **Secrets Store** (an
+   account-level secret manager), wired up via `secrets_store_secrets` in
+   `wrangler.jsonc` at the repo root — not a plain per-Worker secret. In the
+   Cloudflare dashboard, go to **Secrets Store** (a top-level item in the
+   account sidebar, separate from this Worker project) and create/update a
+   secret named `ANTHROPIC_API_KEY` with your key as the value. If you ever
+   need to point at a different store, update the `store_id` in
+   `wrangler.jsonc` to match.
 3. Trigger a new deployment if it doesn't happen automatically (push any
-   change, or "Retry deployment" in the dashboard) so the running Worker
-   picks up the secret.
+   change, or retry the latest deployment from the **Deployments** tab) so
+   the running Worker picks up the secret.
 
 If you skip this step, everything else (contacts, groups, the officials
 library, GitHub sync) still works — only the two AI-assisted buttons show an
