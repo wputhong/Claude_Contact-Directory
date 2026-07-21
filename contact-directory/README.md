@@ -10,9 +10,18 @@ replaces those with things you host yourself:
 
 - **Data storage** → a private GitHub Gist, read/written directly from the
   browser via the GitHub REST API.
-- **AI features** (optional) → `site-worker.js`, a Cloudflare Worker that
-  serves the static site *and* holds your Anthropic API key server-side to
-  proxy `api.anthropic.com`. The browser never sees the key.
+- **Name-card scan** → runs entirely in the browser via
+  [Tesseract.js](https://github.com/naptha/tesseract.js) (OCR, WebAssembly,
+  loaded from a public CDN on first use). No server, no API key, no per-scan
+  cost — trade-off is it can only read text, not reason about card layout, so
+  field assignment (name vs. title vs. org) is a set of heuristics rather than
+  true understanding. A "Show scanned text" toggle always reveals the raw OCR
+  output so anything mis-assigned can be copied out by hand.
+- **"Check for updates"** (optional) → `site-worker.js`, a Cloudflare Worker
+  that serves the static site *and* holds your Anthropic API key server-side
+  to proxy `api.anthropic.com`. The browser never sees the key. (This is the
+  only remaining feature that costs anything or needs an API key — name-card
+  scanning does not use it.)
 
 ## 1. Host the site — Cloudflare Workers (with static assets)
 
@@ -72,16 +81,19 @@ computer's browser.
 
 ## 3. (Optional) Turn on AI features
 
-The **📷 Scan a name card** and **⟲ Check for updates** buttons need a
-server-side proxy, because they call the Anthropic API with a real API key —
-something that can't safely live in client-side JS. Since `site-worker.js`
-serves both the site and the API from the same Worker, the app already calls
+The **📷 Scan a name card** button needs nothing further — it runs OCR
+locally in the browser via Tesseract.js and works as soon as the site is
+deployed, with no API key and no per-scan cost. The only remaining button
+that needs a server-side proxy is **⟲ Check for updates**, because it calls
+the Anthropic API (web search + reasoning) with a real API key — something
+that can't safely live in client-side JS. Since `site-worker.js` serves both
+the site and the API from the same Worker, the app already calls
 `/v1/messages` on its own domain by default — once this is set up there's
 nothing to configure in Settings, on any device, including your phone.
 
 1. Get an API key from **console.anthropic.com → API Keys → Create Key**.
-   Unlike the free hosting/storage above, Anthropic API usage is
-   pay-as-you-go (a few cents per scan), not a subscription.
+   Unlike the free hosting/storage/scanning above, Anthropic API usage is
+   pay-as-you-go (a few cents per check), not a subscription.
 2. This project reads the key through Cloudflare **Secrets Store** (an
    account-level secret manager), wired up via `secrets_store_secrets` in
    `wrangler.jsonc` at the repo root — not a plain per-Worker secret. In the
@@ -95,8 +107,9 @@ nothing to configure in Settings, on any device, including your phone.
    the running Worker picks up the secret.
 
 If you skip this step, everything else (contacts, groups, the officials
-library, GitHub sync) still works — only the two AI-assisted buttons show an
-error explaining the proxy isn't set up yet.
+library, GitHub sync, and name-card scanning) still works — only the
+**⟲ Check for updates** button shows an error explaining the proxy isn't set
+up yet.
 
 ### Alternative: hosting the static site elsewhere
 
