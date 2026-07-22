@@ -490,11 +490,18 @@
           </div>
         </div>
         <div class="field-row">
-          <label>Phone</label>
+          <label>Mobile</label>
           <div class="input-wrap">
-            <input type="text" id="f_phone" placeholder="+66 ...">
-            <button type="button" class="field-clear-btn" data-clear="f_phone" aria-label="Clear">✕</button>
+            <input type="text" id="f_mobile" placeholder="+66 8...">
+            <button type="button" class="field-clear-btn" data-clear="f_mobile" aria-label="Clear">✕</button>
           </div>
+        </div>
+      </div>
+      <div class="field-row" id="contactOnlyFields3">
+        <label>Tel (landline, optional)</label>
+        <div class="input-wrap">
+          <input type="text" id="f_tel" placeholder="e.g. 02-123-4567">
+          <button type="button" class="field-clear-btn" data-clear="f_tel" aria-label="Clear">✕</button>
         </div>
       </div>
       <div class="two-col">
@@ -921,7 +928,8 @@
           </div>
         </div>
         ${entity.email ? `<div class="field"><span class="lbl">@</span><span>${escapeHtml(entity.email)}</span></div>` : ''}
-        ${entity.phone ? `<div class="field"><span class="lbl">#</span><span>${escapeHtml(entity.phone)}</span></div>` : ''}
+        ${(entity.mobile || entity.phone) ? `<div class="field"><span class="lbl">M</span><span>${escapeHtml(entity.mobile || entity.phone)}</span></div>` : ''}
+        ${entity.tel ? `<div class="field"><span class="lbl">T</span><span>${escapeHtml(entity.tel)}</span></div>` : ''}
         ${entity.notes ? `<div class="notes">${escapeHtml(entity.notes)}</div>` : ''}
         <div style="display:flex; align-items:center; justify-content:space-between; margin-top:10px;">
           ${kind==='contact'
@@ -1071,12 +1079,16 @@
     $('scanCardBtn').style.display = isOfficial ? 'none' : 'flex';
     $('contactOnlyFields1').style.display = isOfficial ? 'none' : 'grid';
     $('contactOnlyFields2').style.display = isOfficial ? 'none' : 'block';
+    $('contactOnlyFields3').style.display = isOfficial ? 'none' : 'block';
 
     $('f_name').value = c ? c.name||'' : '';
     $('f_position').value = c ? c.position||'' : '';
     $('f_org').value = c ? c.org||'' : '';
     $('f_email').value = c ? c.email||'' : '';
-    $('f_phone').value = c ? c.phone||'' : '';
+    // Legacy contacts only have a single .phone value — treat it as the
+    // mobile number, since that was the field's original priority framing.
+    $('f_mobile').value = c ? (c.mobile || c.phone || '') : '';
+    $('f_tel').value = c ? c.tel||'' : '';
     $('f_met').value = c ? c.met||'' : '';
     $('f_notes').value = c ? c.notes||'' : '';
     if(isOfficial){
@@ -1134,7 +1146,8 @@
     if(pendingPhotoDataUrl !== undefined) data.photo = pendingPhotoDataUrl; // null clears it, string sets it
     if(!isOfficial){
       data.email = $('f_email').value.trim();
-      data.phone = $('f_phone').value.trim();
+      data.mobile = $('f_mobile').value.trim();
+      data.tel = $('f_tel').value.trim();
       data.met = $('f_met').value.trim();
     }
     const targetArray = isOfficial ? state.library.officials : state.contacts;
@@ -1352,22 +1365,45 @@
     return new RegExp('\\b' + escapeRegex(keyword) + '\\b', 'i').test(line);
   }
 
+  // Thai numbering plan: mobiles are 10 digits starting 06/08/09; landlines
+  // (Bangkok "02" or a provincial area code) are 8-9 digits starting "0".
+  // +66 international format drops the leading 0, so it's restored first.
+  function classifyThaiPhone(raw){
+    let digits = raw.replace(/[^\d+]/g, '');
+    if(digits.startsWith('+66')) digits = '0' + digits.slice(3);
+    else if(digits.startsWith('66') && digits.length > 9) digits = '0' + digits.slice(2);
+    digits = digits.replace(/\+/g, '');
+    if(/^0[689]\d{8}$/.test(digits)) return 'mobile';
+    if(/^0\d{7,8}$/.test(digits)) return 'tel';
+    return 'unknown';
+  }
+
   function parseCardText(text){
     const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
     const emailMatch = text.match(/[\w.+-]+@[\w-]+\.[\w.-]+/);
     const email = emailMatch ? emailMatch[0] : '';
 
-    let phone = '';
+    let mobile = '';
+    let tel = '';
+    const phoneValues = [];
     for(const line of lines){
       if(/fax/i.test(line)) continue;
       const m = line.match(/(\+?\d[\d\-\s()]{6,}\d)/);
-      if(m){ phone = m[1].trim(); break; }
+      if(!m) continue;
+      const raw = m[1].trim();
+      phoneValues.push(raw);
+      const type = classifyThaiPhone(raw);
+      if(type === 'mobile' && !mobile) mobile = raw;
+      else if(type === 'tel' && !tel) tel = raw;
     }
+    // Nothing matched the Thai mobile/landline pattern (e.g. a foreign
+    // number) — default the first one found into Mobile, the priority field.
+    if(!mobile && !tel && phoneValues.length) mobile = phoneValues[0];
 
     const isNoise = (line) => {
       if(line.length < 2) return true;
       if(line.includes('@')) return true;
-      if(phone && line.includes(phone)) return true;
+      if((mobile && line.includes(mobile)) || (tel && line.includes(tel))) return true;
       if(/^(tel|mobile|phone|fax|email|e-mail|line id|www\.|https?:)/i.test(line)) return true;
       return false;
     };
@@ -1396,7 +1432,7 @@
     const leftover = remaining.filter(l => l !== name);
     if(!org && leftover.length) org = leftover[0];
 
-    return { name, position, org, email, phone };
+    return { name, position, org, email, mobile, tel };
   }
 
   async function handleCardImage(files){
@@ -1427,7 +1463,7 @@
       rawToggle.style.display = combinedText.trim() ? 'block' : 'none';
 
       const parsed = parseCardText(combinedText);
-      if(!parsed.name && !parsed.org && !parsed.email && !parsed.phone){
+      if(!parsed.name && !parsed.org && !parsed.email && !parsed.mobile && !parsed.tel){
         statusEl.classList.add('error');
         statusEl.textContent = "Couldn't make out enough of that card — try a straighter, better-lit photo, or enter details manually.";
         return;
@@ -1437,7 +1473,8 @@
       if(parsed.position) $('f_position').value = parsed.position;
       if(parsed.org) $('f_org').value = parsed.org;
       if(parsed.email) $('f_email').value = parsed.email;
-      if(parsed.phone) $('f_phone').value = parsed.phone;
+      if(parsed.mobile) $('f_mobile').value = parsed.mobile;
+      if(parsed.tel) $('f_tel').value = parsed.tel;
       refreshFieldClearButtons();
 
       statusEl.classList.remove('error');
