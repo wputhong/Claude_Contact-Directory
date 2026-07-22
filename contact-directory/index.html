@@ -1351,18 +1351,39 @@
 
   const CARD_ORG_KEYWORDS = ['ltd','co.,','co ltd','company','inc','corp','corporation','group','bank',
     'university','institute','ministry','department','bureau','office','agency','authority','plc',
-    'foundation','faculty','school','council','commission','llc','limited','holdings','partners'];
+    'foundation','faculty','school','council','commission','llc','limited','holdings','partners',
+    // Thai equivalents — Thai script has no word spacing, so these are matched
+    // as plain substrings (see matchesCardKeyword below), which is the right
+    // behavior for compound Thai words anyway.
+    'กระทรวง','กรม','สำนักงาน','สำนัก','กอง','ฝ่าย','บริษัท','จำกัด','มหาวิทยาลัย','สถาบัน','ธนาคาร',
+    'องค์การ','องค์กร','หน่วยงาน','สภา','คณะ','มูลนิธิ','การไฟฟ้า','การประปา','เทศบาล','ห้างหุ้นส่วน','สมาคม'];
   const CARD_TITLE_KEYWORDS = ['director','manager','president','ceo','cfo','coo','cto','officer',
     'engineer','consultant','analyst','secretary','chief','head of','vice','senior','chairman',
     'governor','minister','deputy','advisor','adviser','specialist','coordinator','supervisor',
-    'founder','partner','associate','executive','representative'];
+    'founder','partner','associate','executive','representative',
+    // Thai equivalents
+    'ผู้อำนวยการ','รองผู้อำนวยการ','ผู้จัดการ','รองผู้จัดการ','ประธาน','รองประธาน','กรรมการผู้จัดการ',
+    'กรรมการ','หัวหน้า','เลขานุการ','ที่ปรึกษา','นักวิเคราะห์','วิศวกร','ปลัดกระทรวง','อธิบดี','รองอธิบดี',
+    'เจ้าหน้าที่','ผู้บริหาร','รัฐมนตรี','ผู้ว่าราชการ','ผู้ว่าการ','รองผู้ว่าการ','นายกเทศมนตรี','ผู้ช่วย',
+    'นักวิชาการ','ผู้เชี่ยวชาญ'];
+  // Thai honorifics/rank prefixes — a line starting with one of these is
+  // almost always the person's name, which matters most on Thai-only cards
+  // where there's no English line to fall back on.
+  const THAI_NAME_PREFIXES = ['นางสาว','นาง','นาย','นายแพทย์','แพทย์หญิง',
+    'ดร.','ดร','ผศ.ดร.','รศ.ดร.','ศ.ดร.','ผศ.','รศ.','ศ.','คุณ','ว่าที่',
+    'ม.ล.','ม.ร.ว.','ม.จ.','พลเอก','พลโท','พลตรี','พันเอก','พันโท','พันตรี','ร้อยเอก','ร้อยโท','ร้อยตรี'];
 
   function escapeRegex(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
   function matchesCardKeyword(line, keyword){
-    // Multi-word/punctuated keywords (e.g. "co.,") stay substring matches;
-    // single words use \b so e.g. "engineer" doesn't false-match "Engineering".
+    // Multi-word/punctuated keywords (e.g. "co.,") and non-Latin (e.g. Thai)
+    // keywords stay substring matches; single Latin words use \b so e.g.
+    // "engineer" doesn't false-match "Engineering".
     if(/[^a-z ]/i.test(keyword)) return line.toLowerCase().includes(keyword);
     return new RegExp('\\b' + escapeRegex(keyword) + '\\b', 'i').test(line);
+  }
+  function startsWithThaiName(line){
+    const trimmed = line.trim();
+    return THAI_NAME_PREFIXES.some(p => trimmed.startsWith(p));
   }
 
   // Thai numbering plan: mobiles are 10 digits starting 06/08/09; landlines
@@ -1428,7 +1449,14 @@
       const thaiCount = (line.match(/[฀-๿]/g) || []).length;
       return latinCount > 0 && latinCount >= thaiCount;
     };
-    const name = remaining.length ? (remaining.find(isMostlyLatin) || remaining[0]) : '';
+    // On Thai-only cards (no Latin line to prefer), a line starting with a
+    // Thai honorific/rank is a much stronger name signal than "just pick
+    // the first remaining line" — e.g. it correctly skips a Thai company
+    // tagline or department caption that the org/title keyword lists above
+    // didn't happen to catch.
+    const name = remaining.length
+      ? (remaining.find(isMostlyLatin) || remaining.find(startsWithThaiName) || remaining[0])
+      : '';
     const leftover = remaining.filter(l => l !== name);
     if(!org && leftover.length) org = leftover[0];
 
