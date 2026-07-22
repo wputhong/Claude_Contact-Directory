@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "contact-directory",
+  "name": "claude-contact-directory",
   "main": "contact-directory/site-worker.js",
   "compatibility_date": "2026-07-20",
   "observability": {
