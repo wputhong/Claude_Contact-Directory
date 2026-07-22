@@ -1352,6 +1352,7 @@
   const CARD_ORG_KEYWORDS = ['ltd','co.,','co ltd','company','inc','corp','corporation','group','bank',
     'university','institute','ministry','department','bureau','office','agency','authority','plc',
     'foundation','faculty','school','council','commission','llc','limited','holdings','partners',
+    'embassy','consulate',
     // Thai equivalents — Thai script has no word spacing, so these are matched
     // as plain substrings (see matchesCardKeyword below), which is the right
     // behavior for compound Thai words anyway.
@@ -1390,7 +1391,10 @@
   // (Bangkok "02" or a provincial area code) are 8-9 digits starting "0".
   // +66 international format drops the leading 0, so it's restored first.
   function classifyThaiPhone(raw){
-    let digits = raw.replace(/[^\d+]/g, '');
+    // Strip parenthesized segments first — cards commonly print the trunk
+    // prefix as "+66 (0) 2 205 4314", where "(0)" is dialing notation, not
+    // an actual digit, and keeping it would corrupt the digit count.
+    let digits = raw.replace(/\([^)]*\)/g, '').replace(/[^\d+]/g, '');
     if(digits.startsWith('+66')) digits = '0' + digits.slice(3);
     else if(digits.startsWith('66') && digits.length > 9) digits = '0' + digits.slice(2);
     digits = digits.replace(/\+/g, '');
@@ -1426,6 +1430,10 @@
       if(line.includes('@')) return true;
       if((mobile && line.includes(mobile)) || (tel && line.includes(tel))) return true;
       if(/^(tel|mobile|phone|fax|email|e-mail|line id|www\.|https?:)/i.test(line)) return true;
+      // Reject OCR noise (misread background clutter, card texture, etc.):
+      // a real word almost always has a run of 3+ letters in a row, while a
+      // garbled fragment like "Vv 9° ร" or "# N Pp 7 <. ๕" doesn't.
+      if(!/[A-Za-z฀-๿]{3,}/.test(line)) return true;
       return false;
     };
     const candidates = lines.filter(l => !isNoise(l));
@@ -1454,8 +1462,18 @@
     // the first remaining line" — e.g. it correctly skips a Thai company
     // tagline or department caption that the org/title keyword lists above
     // didn't happen to catch.
+    //
+    // A remaining line that reads like letterhead/institutional text (e.g.
+    // "Embassy of the" / "United States of America" sitting above the
+    // person's name) shouldn't win the name slot just for being first —
+    // real personal names essentially never contain connector words like
+    // "of"/"the", so prefer a Latin line without them first.
+    const looksInstitutional = (line) => /\b(of|the|and|inc|ltd|llc|plc|group|embassy|consulate|kingdom|republic|united|states|america|corporation)\b/i.test(line);
     const name = remaining.length
-      ? (remaining.find(isMostlyLatin) || remaining.find(startsWithThaiName) || remaining[0])
+      ? (remaining.find(l => isMostlyLatin(l) && !looksInstitutional(l))
+        || remaining.find(isMostlyLatin)
+        || remaining.find(startsWithThaiName)
+        || remaining[0])
       : '';
     const leftover = remaining.filter(l => l !== name);
     if(!org && leftover.length) org = leftover[0];
