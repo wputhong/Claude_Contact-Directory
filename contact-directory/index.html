@@ -325,6 +325,16 @@
     border-radius:7px; padding:10px 12px; margin:-8px 0 16px; max-height:160px; overflow-y:auto;
   }
   .scan-raw-text.show{ display:block; }
+  .input-wrap{ position:relative; }
+  .input-wrap input{ padding-right:30px; }
+  .field-clear-btn{
+    display:none; align-items:center; justify-content:center;
+    position:absolute; right:4px; top:50%; transform:translateY(-50%);
+    width:22px; height:22px; padding:0; border:none; border-radius:50%;
+    background:none; color:var(--ink-soft); font-size:15px; line-height:1; cursor:pointer;
+  }
+  .field-clear-btn:hover{ background:var(--paper-deep); color:var(--ink); }
+  .field-clear-btn.show{ display:flex; }
   .field-row{ margin-bottom:14px; }
   .field-row label{
     display:block; font-size:12px; font-weight:500; color:var(--ink-soft);
@@ -450,26 +460,41 @@
       <pre class="scan-raw-text" id="scanRawText"></pre>
       <div class="field-row">
         <label>Name *</label>
-        <input type="text" id="f_name" placeholder="e.g. Dr. Somchai Prasert">
+        <div class="input-wrap">
+          <input type="text" id="f_name" placeholder="e.g. Dr. Somchai Prasert">
+          <button type="button" class="field-clear-btn" data-clear="f_name" aria-label="Clear">✕</button>
+        </div>
       </div>
       <div class="two-col">
         <div class="field-row">
           <label id="f_position_label">Recent position</label>
-          <input type="text" id="f_position" placeholder="e.g. Director, Fiscal Policy Office">
+          <div class="input-wrap">
+            <input type="text" id="f_position" placeholder="e.g. Director, Fiscal Policy Office">
+            <button type="button" class="field-clear-btn" data-clear="f_position" aria-label="Clear">✕</button>
+          </div>
         </div>
         <div class="field-row">
           <label id="f_org_label">Organization *</label>
-          <input type="text" id="f_org" placeholder="e.g. Ministry of Finance">
+          <div class="input-wrap">
+            <input type="text" id="f_org" placeholder="e.g. Ministry of Finance">
+            <button type="button" class="field-clear-btn" data-clear="f_org" aria-label="Clear">✕</button>
+          </div>
         </div>
       </div>
       <div class="two-col" id="contactOnlyFields1">
         <div class="field-row">
           <label>Email</label>
-          <input type="email" id="f_email" placeholder="name@agency.go.th">
+          <div class="input-wrap">
+            <input type="email" id="f_email" placeholder="name@agency.go.th">
+            <button type="button" class="field-clear-btn" data-clear="f_email" aria-label="Clear">✕</button>
+          </div>
         </div>
         <div class="field-row">
           <label>Phone</label>
-          <input type="text" id="f_phone" placeholder="+66 ...">
+          <div class="input-wrap">
+            <input type="text" id="f_phone" placeholder="+66 ...">
+            <button type="button" class="field-clear-btn" data-clear="f_phone" aria-label="Clear">✕</button>
+          </div>
         </div>
       </div>
       <div class="two-col">
@@ -479,7 +504,10 @@
         </div>
         <div class="field-row" id="contactOnlyFields2">
           <label>Where we met</label>
-          <input type="text" id="f_met" placeholder="e.g. BOT DSA Workshop, 2026">
+          <div class="input-wrap">
+            <input type="text" id="f_met" placeholder="e.g. BOT DSA Workshop, 2026">
+            <button type="button" class="field-clear-btn" data-clear="f_met" aria-label="Clear">✕</button>
+          </div>
         </div>
       </div>
       <div class="field-row">
@@ -1065,6 +1093,7 @@
     $('scanRawToggle').style.display = 'none';
     $('scanRawToggle').textContent = 'Show scanned text';
     $('scanRawText').classList.remove('show');
+    refreshFieldClearButtons();
     $('contactOverlay').classList.add('show');
     lockBodyScroll();
     setTimeout(() => $('f_name').focus(), 50);
@@ -1355,8 +1384,17 @@
       if(!org && CARD_ORG_KEYWORDS.some(k => matchesCardKeyword(line, k))){ org = line; continue; }
       remaining.push(line);
     }
-    const name = remaining.length ? remaining[0] : '';
-    if(!org && remaining.length > 1) org = remaining[1];
+    // Bilingual cards often print the name in Thai and English on separate
+    // lines — prefer the English (Latin-script) one for the name field, but
+    // fall back to whatever's first if nothing Latin-script turns up.
+    const isMostlyLatin = (line) => {
+      const latinCount = (line.match(/[A-Za-z]/g) || []).length;
+      const thaiCount = (line.match(/[฀-๿]/g) || []).length;
+      return latinCount > 0 && latinCount >= thaiCount;
+    };
+    const name = remaining.length ? (remaining.find(isMostlyLatin) || remaining[0]) : '';
+    const leftover = remaining.filter(l => l !== name);
+    if(!org && leftover.length) org = leftover[0];
 
     return { name, position, org, email, phone };
   }
@@ -1400,6 +1438,7 @@
       if(parsed.org) $('f_org').value = parsed.org;
       if(parsed.email) $('f_email').value = parsed.email;
       if(parsed.phone) $('f_phone').value = parsed.phone;
+      refreshFieldClearButtons();
 
       statusEl.classList.remove('error');
       statusEl.textContent = 'Filled in from OCR — please check every field, this reads text but doesn\'t understand layout.';
@@ -1660,8 +1699,31 @@
     }
   }
 
+  // ---------- Field clear ("✕") buttons ----------
+  // Shows a small clear button inside each single-line input once it has a
+  // value (handy after a scan fills in a wrong field) and hides it when empty.
+  function refreshFieldClearButtons(){
+    document.querySelectorAll('.field-clear-btn[data-clear]').forEach(btn => {
+      const input = $(btn.dataset.clear);
+      if(input) btn.classList.toggle('show', !!input.value);
+    });
+  }
+  function setupFieldClearButtons(){
+    document.querySelectorAll('.field-clear-btn[data-clear]').forEach(btn => {
+      const input = $(btn.dataset.clear);
+      if(!input) return;
+      input.addEventListener('input', () => btn.classList.toggle('show', !!input.value));
+      btn.addEventListener('click', () => {
+        input.value = '';
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        input.focus();
+      });
+    });
+  }
+
   // ---------- Wire up ----------
   document.addEventListener('DOMContentLoaded', () => {
+    setupFieldClearButtons();
     $('addContactBtn').addEventListener('click', () => openContactModal(null, mode === 'library' ? 'official' : 'contact'));
     $('emptyAddBtn').addEventListener('click', () => openContactModal(null, mode === 'library' ? 'official' : 'contact'));
     $('contactCloseBtn').addEventListener('click', closeContactModal);
